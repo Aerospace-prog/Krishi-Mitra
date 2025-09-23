@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   en: {
     translation: {
-      title: "HARVEST JOURNEY",
+      title: "Krishi Mitra",
       subtitle: "Grow Your Own Green Future",
       getStarted: "Get Started",
       skip: "Skip"
@@ -12,7 +12,7 @@ const resources = {
   },
   hi: {
     translation: {
-      title: "हार्वेस्ट जर्नी",
+      title: "कृषि मित्र",
       subtitle: "अपना खुद का हरा भविष्य बढ़ाएं",
       getStarted: "शुरू करें",
       skip: "छोड़ें"
@@ -20,7 +20,7 @@ const resources = {
   },
   ta: {
     translation: {
-      title: "ஹார்வெஸ்ட் ஜர்னி",
+      title: "கிருஷி மித்ரா",
       subtitle: "உங்கள் செழிப்பான எதிர்காலத்தை உருவாக்குங்கள்",
       getStarted: "தொடங்குக",
       skip: "தவிர்க்குக"
@@ -28,7 +28,7 @@ const resources = {
   },
   te: {
     translation: {
-      title: "హార్వెస్ట్ జర్నీ",
+      title: "కృషి మిత్ర",
       subtitle: "మీ స్వంత హరిత భవిష్యత్తును పెంచుకోండి",
       getStarted: "ప్రారంభించండి",
       skip: "దాటవేయండి"
@@ -36,7 +36,7 @@ const resources = {
   },
   kn: {
     translation: {
-      title: "ಹಾರ್ವೆಸ್ಟ್ ಜರ್ನಿ",
+      title: "ಕೃಷಿ ಮಿತ್ರ",
       subtitle: "ನಿಮ್ಮ ಹಸಿರು ಭವಿಷ್ಯವನ್ನು ಬೆಳೆಸಿಕೊಳ್ಳಿ",
       getStarted: "ಪ್ರಾರಂಭಿಸಿ",
       skip: "ಬಿಟ್ಟಿ"
@@ -44,7 +44,7 @@ const resources = {
   },
   ml: {
     translation: {
-      title: "ഹാർവസ്റ്റ് ജേർണി",
+      title: "കൃഷി മിത്ര",
       subtitle: "നിങ്ങളുടെ സ്വപ്നങ്ങൾ സഫലമാക്കൂ",
       getStarted: "ആരംഭിക്കുക",
       skip: "കടത്തി വയ്ക്കുക"
@@ -52,7 +52,7 @@ const resources = {
   },
   mr: {
     translation: {
-      title: "हार्वेस्ट जर्नी",
+      title: "कृषी मित्र",
       subtitle: "तुमचा हिरवा भविष्य वाढवा",
       getStarted: "सुरू करा",
       skip: "वजा करा"
@@ -60,7 +60,7 @@ const resources = {
   },
   gu: {
     translation: {
-      title: "હાર્વેસ્ટ જર્ની",
+      title: "કૃષિ મિત્ર",
       subtitle: "તમારું હરિત ભવિષ્ય વધારવું",
       getStarted: "પ્રારંભ કરો",
       skip: "રદ કરો"
@@ -68,7 +68,7 @@ const resources = {
   },
   pa: {
     translation: {
-      title: "ਹਾਰਵੇਸਟ ਜਰਨੀ",
+      title: "ਕ੍ਰਿਸ਼ੀ ਮਿੱਤਰ",
       subtitle: "ਆਪਣਾ ਹਰਾ ਭਵਿੱਖ ਬਣਾਓ",
       getStarted: "ਸ਼ੁਰੂ ਕਰੋ",
       skip: "ਛੱਡੋ"
@@ -76,7 +76,7 @@ const resources = {
   },
   bn: {
     translation: {
-      title: "হার্ভেস্ট জার্নি",
+      title: "কৃষি মিত্র",
       subtitle: "আপনার নিজের সবুজ ভবিষ্যৎ গড়ুন",
       getStarted: "শুরু করুন",
       skip: "বাতিল করুন"
@@ -84,7 +84,7 @@ const resources = {
   },
   or: {
     translation: {
-      title: "ହାର୍ଭେଷ୍ଟ ଜର୍ଣୀ",
+      title: "କୃଷି ମିତ୍ର",
       subtitle: "ଆପଣଙ୍କର ସବୁଜ ଭବିଷ୍ୟତ ଗଢନ୍ତୁ",
       getStarted: "ଆରମ୍ଭ କରନ୍ତୁ",
       skip: "ବାତିଲ କରନ୍ତୁ"
@@ -92,7 +92,7 @@ const resources = {
   },
   as: {
     translation: {
-      title: "হাৰ্ভেষ্ট যাত্ৰা",
+      title: "কৃষি মিত্ৰ",
       subtitle: "নিজৰ সেউজীয়া ভৱিষ্যত গঢ়াওক",
       getStarted: "আৰম্ভ কৰক",
       skip: "বাতিল কৰক"
@@ -100,7 +100,7 @@ const resources = {
   },
   ur: {
     translation: {
-      title: "ہارویسٹ جرنی",
+      title: "کرشی متر",
       subtitle: "اپنا سبز مستقبل بنائیں",
       getStarted: "شروع کریں",
       skip: "منسوخ کریں"
