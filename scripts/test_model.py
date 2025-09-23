@@ -17,7 +17,7 @@ print("Model loaded successfully.")
 # [N, P, K, temperature, humidity, ph, rainfall]
 print("Step 2: Preparing sample data...")
 # Let's use data that should strongly suggest 'rice'.
-sample_data = np.array([[117, 81, 53, 29.50, 78.2, 5.5, 98.1]])
+sample_data = np.array([[117, 29.50, 78.2, 5.5, 98.1]])
 print(f"Sample Input Data: {sample_data}")
 
 # --- 3. Make a Prediction ---

@@ -19,7 +19,7 @@ df = pd.read_csv(data_path)
 # Here, we separate our data into features (the inputs) and the target (the output).
 print("Step 2: Preparing data...")
 # X contains all the input columns our model will learn from.
-X = df[['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']]
+X = df[['N', 'temperature', 'humidity', 'ph', 'rainfall']]
 # y contains the single output column we want to predict (the crop 'label').
 y = df['label']
 
