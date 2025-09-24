@@ -12,13 +12,31 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
 from datetime import datetime, timedelta
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- Part 2: Initial Configuration ---
 load_dotenv()
 app = FastAPI()
 
+# Enable CORS for frontend (Vite dev server and common localhost origins)
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost",
+    "http://127.0.0.1",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # --- Part 3: The State-Crop Database ---
-# ... (Part 3 remains unchanged)
 STATE_CROPS = {
     "Andhra Pradesh": ["rice", "cotton", "maize", "mango", "orange", "papaya"],
     "Arunachal Pradesh": ["rice", "maize", "orange"],
@@ -248,6 +266,11 @@ async def recommend_by_location(location: LocationInput):
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': monthly_rainfall},
         'location_info': {'state': state}
     }
+
+# Backward/compatibility alias
+@app.post("/recommend")
+async def recommend(location: LocationInput):
+    return await recommend_by_location(location)
 
 @app.get("/")
 def read_root():
