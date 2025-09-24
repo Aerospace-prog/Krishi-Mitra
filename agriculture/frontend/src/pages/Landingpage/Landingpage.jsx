@@ -23,9 +23,8 @@ const Landingpage = () => {
       <video
         autoPlay
         loop
-        muted
         className="bg-video"
-        src="/Videos/farm-video.mp4"
+        src="/Videos/Background.mp4"
         type="video/mp4"
       ></video>
       <div className="overlay" />
@@ -66,9 +65,9 @@ const Landingpage = () => {
             </div>
             <div className="auth-body">
               {authTab === 'sign-in' ? (
-                <SignIn routing="hash" afterSignInUrl="/" signUpUrl="#/sign-up" />
+                <SignIn routing="hash" afterSignInUrl="/home" signUpUrl="#/sign-up" />
               ) : (
-                <SignUp routing="hash" afterSignUpUrl="/" signInUrl="#/sign-in" />
+                <SignUp routing="hash" afterSignUpUrl="/home" signInUrl="#/sign-in" />
               )}
             </div>
           </div>
