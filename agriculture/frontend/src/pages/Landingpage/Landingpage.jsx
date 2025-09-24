@@ -24,7 +24,7 @@ const Landingpage = () => {
         autoPlay
         loop
         className="bg-video"
-        src="/Videos/Background.mp4"
+        src="/Videos/landing-page-vedio.mp4"
         type="video/mp4"
       ></video>
       <div className="overlay" />
