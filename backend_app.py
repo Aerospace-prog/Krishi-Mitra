@@ -34,7 +34,8 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"https?://(.*\.expo\.dev|localhost(:\d+)?|127\.0\.0\.1(:\d+)?)$",
+    # Allow localhost, 127.0.0.1, *.expo.dev, and any IPv4 LAN IP with optional port
+    allow_origin_regex=r"^https?://((.*\\.expo\\.dev)|(localhost|127\\.0\\.0\\.1)(:\\d+)?|((?:[0-9]{1,3}\\.){3}[0-9]{1,3})(:\\d+)?)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
