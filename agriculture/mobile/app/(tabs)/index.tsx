@@ -32,8 +32,9 @@ export default function TabOneScreen() {
 
       let baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
       // Android emulator cannot reach localhost; use 10.0.2.2
-      if (Platform.OS === 'android' && baseUrl.includes('127.0.0.1')) {
-        baseUrl = baseUrl.replace('127.0.0.1', '10.0.2.2');
+      if (Platform.OS === 'android') {
+        if (baseUrl.includes('127.0.0.1')) baseUrl = baseUrl.replace('127.0.0.1', '10.0.2.2');
+        if (baseUrl.includes('localhost')) baseUrl = baseUrl.replace('localhost', '10.0.2.2');
       }
       const res = await fetch(`${baseUrl}/v1/recommendations/location`, {
         method: 'POST',
