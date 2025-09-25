@@ -26,11 +26,15 @@ origins = [
     "http://127.0.0.1:5174",
     "http://localhost",
     "http://127.0.0.1",
+    # Expo dev server (Android Emulator/Device tunneled host)
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https?://(.*\.expo\.dev|localhost(:\d+)?|127\.0\.0\.1(:\d+)?)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -275,3 +279,12 @@ async def recommend(location: LocationInput):
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Krishi Mitra AI API (Live & Regional)"}
+
+# --- Part 8: Health and Versioned Endpoints ---
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+@app.post("/v1/recommendations/location")
+async def v1_recommendations_location(location: LocationInput):
+    return await recommend_by_location(location)
