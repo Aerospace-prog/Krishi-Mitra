@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
 import * as Location from 'expo-location';
 import { Text, View } from '@/components/Themed';
 
@@ -30,7 +30,11 @@ export default function TabOneScreen() {
       const latitude = loc.coords.latitude;
       const longitude = loc.coords.longitude;
 
-      const baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+      let baseUrl = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+      // Android emulator cannot reach localhost; use 10.0.2.2
+      if (Platform.OS === 'android' && baseUrl.includes('127.0.0.1')) {
+        baseUrl = baseUrl.replace('127.0.0.1', '10.0.2.2');
+      }
       const res = await fetch(`${baseUrl}/v1/recommendations/location`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
