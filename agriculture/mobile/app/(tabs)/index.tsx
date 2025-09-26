@@ -57,7 +57,7 @@ export default function TabOneScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Recommend</Text>
+      <Text style={styles.title}>Krishi Mitra</Text>
       <Text style={styles.subtitle}>Get crop recommendations for your current location</Text>
       <View style={{ height: 16 }} />
       <Pressable style={styles.button} onPress={requestAndFetch} disabled={loading}>
