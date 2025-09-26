@@ -18,21 +18,34 @@ from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 app = FastAPI()
 
-# Enable CORS for frontend (Vite dev server and common localhost origins)
+# Enhanced CORS for cross-platform support (Web, Mobile, Development)
 origins = [
+    # Web development servers
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174",
     "http://localhost",
     "http://127.0.0.1",
+    # Expo development servers
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:19000",
+    "http://127.0.0.1:19000",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+    # Production domains 
+    # "https://your-web-app.com",
+    # "https://your-mobile-app.expo.dev",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    # Enhanced regex for Expo tunneling, LAN IPs, and development environments
+    allow_origin_regex=r"^https?://((.*\\.expo\\.dev)|(.*\\.ngrok\\.io)|(localhost|127\\.0\\.0\\.1)(:\\d+)?|((?:192\\.168|10\\.0|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.(?:\\d{1,3}\\.){1}\\d{1,3})(:\\d+)?)$",
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -75,10 +88,28 @@ STATE_CROPS = {
 }
 
 
-# --- Part 4: Pydantic Model for GPS Input ---
+# --- Part 4: Pydantic Models for Cross-Platform API ---
 class LocationInput(BaseModel):
     latitude: float
     longitude: float
+
+class RecommendationResponse(BaseModel):
+    crop_recommendation: str
+    advice: str
+    live_data_used: dict
+    location_info: dict
+    confidence_score: float = 0.0
+    alternative_crops: list = []
+
+class HealthResponse(BaseModel):
+    status: str
+    version: str = "1.0.0"
+    services: dict
+
+class ErrorResponse(BaseModel):
+    error: str
+    message: str
+    code: int
 
 # --- Part 5: Load Assets (ML Model & API Keys) ---
 model_path = os.path.join('model', 'crop_recommender.joblib')
@@ -91,7 +122,7 @@ if not GEMINI_API_KEY or not WEATHERAPI_KEY:
     raise ValueError("API keys for Gemini or WeatherAPI.com are missing. Please set them in your .env file.")
 
 genai.configure(api_key=GEMINI_API_KEY)
-gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+gemini_model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- Part 6: Helper Functions (Live Data Fetchers) ---
 async def get_weather_data(lat: float, lon: float, api_key: str) -> dict | None:
@@ -236,21 +267,33 @@ async def recommend_by_location(location: LocationInput):
         monthly_rainfall # Using the more accurate historical average rainfall
     ]])
 
-    # 4. The Smart Prediction Loop with Regional Filtering
+    # 4. Enhanced Smart Prediction with Confidence Scores and Alternatives
     probabilities = model.predict_proba(input_data)[0]
     all_crops = model.classes_
     sorted_predictions = sorted(zip(all_crops, probabilities), key=lambda x: x[1], reverse=True)
     
     suitable_crops_for_state = STATE_CROPS.get(state, list(all_crops))
     
+    # Find the best regionally-appropriate crop with confidence score
     final_crop_name = None
+    confidence_score = 0.0
+    alternative_crops = []
+    
     for crop, prob in sorted_predictions:
         if crop in suitable_crops_for_state:
-            final_crop_name = crop
-            break # Found the best, regionally-appropriate crop
+            if final_crop_name is None:
+                final_crop_name = crop
+                confidence_score = float(prob)
+            elif len(alternative_crops) < 3:  # Top 3 alternatives
+                alternative_crops.append({
+                    "crop": crop,
+                    "confidence": float(prob),
+                    "suitability": "high" if prob > 0.7 else "medium" if prob > 0.4 else "low"
+                })
 
     if not final_crop_name:
-        final_crop_name = sorted_predictions[0][0] # Fallback to the top scientific prediction
+        final_crop_name = sorted_predictions[0][0]
+        confidence_score = float(sorted_predictions[0][1])
 
     # 5. Generate advice using the Gemini API
     prompt = f"""You are 'Krishi Mitra,' a helpful AI assistant for farmers in {state}, India.
@@ -259,12 +302,16 @@ async def recommend_by_location(location: LocationInput):
     
     response = gemini_model.generate_content(prompt)
 
-    # 6. Return the final, structured response
+    # 6. Return the enhanced, structured response
     return {
         'crop_recommendation': final_crop_name,
         'advice': response.text,
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': monthly_rainfall},
-        'location_info': {'state': state}
+        'location_info': {'state': state},
+        'confidence_score': confidence_score,
+        'alternative_crops': alternative_crops,
+        'api_version': '1.0.0',
+        'timestamp': datetime.now().isoformat()
     }
 
 # Backward/compatibility alias
@@ -275,3 +322,37 @@ async def recommend(location: LocationInput):
 @app.get("/")
 def read_root():
     return {"message": "Welcome to the Krishi Mitra AI API (Live & Regional)"}
+
+# --- Part 8: Enhanced Health and Versioned Endpoints ---
+@app.get("/health", response_model=HealthResponse)
+def health_check():
+    """Enhanced health check with service status for cross-platform monitoring"""
+    try:
+        # Test model loading
+        model_status = "ok" if model is not None else "error"
+        
+        # Test API keys
+        api_keys_status = "ok" if GEMINI_API_KEY and WEATHERAPI_KEY else "error"
+        
+        return {
+            "status": "ok" if model_status == "ok" and api_keys_status == "ok" else "degraded",
+            "version": "1.0.0",
+            "services": {
+                "ml_model": model_status,
+                "api_keys": api_keys_status,
+                "gemini_ai": "ok" if GEMINI_API_KEY else "error",
+                "weather_api": "ok" if WEATHERAPI_KEY else "error"
+            }
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "version": "1.0.0",
+            "services": {
+                "error": str(e)
+            }
+        }
+
+@app.post("/v1/recommendations/location")
+async def v1_recommendations_location(location: LocationInput):
+    return await recommend_by_location(location)
