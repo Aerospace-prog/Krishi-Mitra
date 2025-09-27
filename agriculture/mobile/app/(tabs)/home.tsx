@@ -785,17 +785,16 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
-    backgroundColor: '#fff', 
+    backgroundColor: '#4a5568',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#4a5568',
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2d3748',
-    backgroundColor:"#fff"
+    color: '#a0d9b4',
+    // backgroundColor:"#fff"
   },
   // Notification styles
   notificationList: {
