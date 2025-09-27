@@ -7,7 +7,7 @@ import httpx
 import joblib
 import numpy as np
 import google.generativeai as genai
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from geopy.geocoders import Nominatim
@@ -144,6 +144,60 @@ async def get_weather_data(lat: float, lon: float, api_key: str) -> dict | None:
         except httpx.RequestError as e:
             # Catch Timeouts and other request errors specifically
             print(f"WeatherAPI.com request failed with a connection/read error: {e}")
+            return None
+
+async def get_comprehensive_weather_data(lat: float, lon: float, api_key: str) -> dict | None:
+    """Fetches comprehensive weather data from WeatherAPI.com for frontend display."""
+    url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={lat},{lon}&days=7"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract current weather
+            current = data['current']
+            location = data['location']
+            forecast = data['forecast']['forecastday']
+            
+            return {
+                "current": {
+                    "temp_c": current['temp_c'],
+                    "temp_f": current['temp_f'],
+                    "humidity": current['humidity'],
+                    "condition": current['condition']['text'],
+                    "condition_icon": current['condition']['icon'],
+                    "wind_kph": current['wind_kph'],
+                    "wind_mph": current['wind_mph'],
+                    "pressure_mb": current['pressure_mb'],
+                    "feelslike_c": current['feelslike_c'],
+                    "uv": current['uv'],
+                    "visibility_km": current['vis_km']
+                },
+                "location": {
+                    "name": location['name'],
+                    "region": location['region'],
+                    "country": location['country'],
+                    "lat": location['lat'],
+                    "lon": location['lon']
+                },
+                "forecast": [
+                    {
+                        "date": day['date'],
+                        "day": {
+                            "maxtemp_c": day['day']['maxtemp_c'],
+                            "mintemp_c": day['day']['mintemp_c'],
+                            "condition": day['day']['condition']['text'],
+                            "condition_icon": day['day']['condition']['icon']
+                        }
+                    } for day in forecast[:7]  # Next 7 days
+                ]
+            }
+        except httpx.HTTPStatusError as e:
+            print(f"WeatherAPI.com comprehensive request failed: {e}")
+            return None
+        except httpx.RequestError as e:
+            print(f"WeatherAPI.com comprehensive request failed with connection error: {e}")
             return None
 
 async def get_monthly_rainfall(lat: float, lon: float) -> float | None:
@@ -323,6 +377,8 @@ async def recommend(location: LocationInput):
 def read_root():
     return {"message": "Welcome to the Krishi Mitra AI API (Live & Regional)"}
 
+
+
 # --- Part 8: Enhanced Health and Versioned Endpoints ---
 @app.get("/health", response_model=HealthResponse)
 def health_check():
@@ -356,3 +412,36 @@ def health_check():
 @app.post("/v1/recommendations/location")
 async def v1_recommendations_location(location: LocationInput):
     return await recommend_by_location(location)
+
+# --- Part 9: Weather Endpoint for Frontend ---
+@app.post("/weather")
+async def get_weather_for_frontend(location: LocationInput):
+    """
+    Dedicated weather endpoint for frontend weather display.
+    Returns comprehensive weather data including current conditions and forecast.
+    """
+    try:
+        weather_data = await get_comprehensive_weather_data(
+            location.latitude, 
+            location.longitude, 
+            WEATHERAPI_KEY
+        )
+        
+        if not weather_data:
+            raise HTTPException(
+                status_code=503, 
+                detail="Unable to fetch weather data from external service"
+            )
+        
+        return {
+            "success": True,
+            "data": weather_data,
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    except Exception as e:
+        print(f"Weather endpoint error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Weather service error: {str(e)}"
+        )
