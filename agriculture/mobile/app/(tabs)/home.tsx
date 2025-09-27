@@ -24,6 +24,16 @@ type HistoryItem = {
   weather: string;
 };
 
+type WeatherData = {
+  location: string;
+  temperature: number;
+  description: string;
+  humidity: number;
+  windSpeed: number;
+  icon: string;
+  feelsLike: number;
+};
+
 const HISTORY_STORAGE_KEY_PREFIX = '@krishi_mitra_analysis_history_user_';
 
 export default function HomeScreen() {
@@ -37,6 +47,8 @@ export default function HomeScreen() {
   const [showProfile, setShowProfile] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<HistoryItem[]>([]);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
 
   // Get user-specific storage key
   const getUserStorageKey = () => {
@@ -53,6 +65,34 @@ export default function HomeScreen() {
       setAnalysisHistory([]);
     }
   }, [user?.id]);
+
+  // Load weather data on component mount
+  useEffect(() => {
+    const getCurrentLocationWeather = async () => {
+      try {
+        console.log('Requesting location permission...');
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        console.log('Location permission status:', status);
+        
+        if (status === 'granted') {
+          console.log('Getting current position...');
+          const location = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          console.log('Current location:', location.coords);
+          await fetchWeatherData(location.coords.latitude, location.coords.longitude);
+        } else {
+          console.log('Location permission denied');
+          setError('Location permission denied. Cannot fetch weather data.');
+        }
+      } catch (error: any) {
+        console.error('Error getting location for weather:', error);
+        setError(`Location error: ${error.message || 'Unable to get location'}`);
+      }
+    };
+
+    getCurrentLocationWeather();
+  }, []);
 
   const loadHistoryFromStorage = async () => {
     try {
@@ -93,6 +133,53 @@ export default function HomeScreen() {
       setAnalysisHistory([]);
     } catch (error) {
       console.error('Error clearing history from storage:', error);
+    }
+  };
+
+  const fetchWeatherData = async (latitude: number, longitude: number) => {
+    setWeatherLoading(true);
+    try {
+      const apiKey = process.env.EXPO_PUBLIC_OPENWEATHER_API_KEY;
+      console.log('API Key available:', !!apiKey);
+      console.log('Fetching weather for coordinates:', latitude, longitude);
+      
+      if (!apiKey) {
+        throw new Error('OpenWeather API key not found in environment variables');
+      }
+      
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${apiKey}&units=metric`;
+      console.log('Weather API URL:', url.replace(apiKey, 'API_KEY_HIDDEN'));
+      
+      const response = await fetch(url);
+      
+      console.log('Weather API Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Weather API Error:', errorText);
+        throw new Error(`Weather API error: ${response.status} - ${errorText}`);
+      }
+      
+      const data = await response.json();
+      console.log('Weather API Response:', data);
+      
+      const weatherInfo: WeatherData = {
+        location: `${data.name}, ${data.sys.country}`,
+        temperature: Math.round(data.main.temp),
+        description: data.weather[0].description,
+        humidity: data.main.humidity,
+        windSpeed: Math.round(data.wind.speed * 3.6), // Convert m/s to km/h
+        icon: data.weather[0].icon,
+        feelsLike: Math.round(data.main.feels_like)
+      };
+      
+      console.log('Processed weather data:', weatherInfo);
+      setWeatherData(weatherInfo);
+    } catch (error: any) {
+      console.error('Error fetching weather:', error);
+      setError(`Weather error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setWeatherLoading(false);
     }
   };
 
@@ -222,23 +309,72 @@ export default function HomeScreen() {
         <View style={styles.fullWidthCardContainer}>
           <View style={styles.weatherCardFull}>
             <Text style={styles.cardTitle}>Weather</Text>
-            <View style={styles.weatherContentFull}>
-              <View style={styles.weatherLeftSection}>
-                <View style={styles.weatherIcon}>
-                  <Ionicons name="sunny" size={40} color="#FFD700" />
-                  <Ionicons name="cloud" size={24} color="#fff" style={styles.cloudIcon} />
+            {weatherLoading ? (
+              <View style={styles.weatherLoadingContainer}>
+                <ActivityIndicator color="#4CAF50" size="small" />
+                <Text style={styles.weatherLoadingText}>Loading weather...</Text>
+              </View>
+            ) : weatherData ? (
+              <View style={styles.weatherContentFull}>
+                <View style={styles.weatherLeftSection}>
+                  <View style={styles.weatherIcon}>
+                    <Ionicons name="sunny" size={40} color="#FFD700" />
+                    <Ionicons name="cloud" size={24} color="#fff" style={styles.cloudIcon} />
+                  </View>
+                  <View style={styles.weatherInfo}>
+                    <Text style={styles.weatherLocation}>
+                      {weatherData.location}, {weatherData.temperature}°
+                    </Text>
+                    <Text style={styles.weatherDesc}>
+                      {weatherData.description.charAt(0).toUpperCase() + weatherData.description.slice(1)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.weatherInfo}>
-                  <Text style={styles.weatherLocation}>Bengaluru, 28°</Text>
-                  <Text style={styles.weatherDesc}>Mostly sunny</Text>
+                <View style={styles.weatherRightSection}>
+                  <Ionicons name="notifications-outline" size={20} color="#4CAF50" />
+                  <Text style={styles.weatherDetails}>Humidity: {weatherData.humidity}%</Text>
+                  <Text style={styles.weatherDetails}>Wind: {weatherData.windSpeed} km/h</Text>
+                  <Text style={styles.weatherDetails}>Feels like: {weatherData.feelsLike}°</Text>
                 </View>
               </View>
-              <View style={styles.weatherRightSection}>
-                <Ionicons name="notifications-outline" size={20} color="#4CAF50" />
-                <Text style={styles.weatherDetails}>Humidity: 65%</Text>
-                <Text style={styles.weatherDetails}>Wind: 12 km/h</Text>
+            ) : (
+              <View style={styles.weatherErrorContainer}>
+                <Text style={styles.weatherErrorText}>Unable to load weather data</Text>
+                <Text style={styles.weatherErrorSubtext}>
+                  {error?.includes('Weather error') ? error : 'Check console for details'}
+                </Text>
+                <Pressable 
+                  style={styles.weatherRetryButton}
+                  onPress={() => {
+                    setError(null); // Clear previous error
+                    const getCurrentLocationWeather = async () => {
+                      try {
+                        console.log('Retry: Requesting location permission...');
+                        const { status } = await Location.requestForegroundPermissionsAsync();
+                        console.log('Retry: Location permission status:', status);
+                        
+                        if (status === 'granted') {
+                          console.log('Retry: Getting current position...');
+                          const location = await Location.getCurrentPositionAsync({
+                            accuracy: Location.Accuracy.Balanced,
+                          });
+                          console.log('Retry: Current location:', location.coords);
+                          await fetchWeatherData(location.coords.latitude, location.coords.longitude);
+                        } else {
+                          setError('Location permission denied. Cannot fetch weather data.');
+                        }
+                      } catch (error: any) {
+                        console.error('Retry: Error getting location for weather:', error);
+                        setError(`Location error: ${error.message || 'Unable to get location'}`);
+                      }
+                    };
+                    getCurrentLocationWeather();
+                  }}
+                >
+                  <Text style={styles.weatherRetryText}>Retry</Text>
+                </Pressable>
               </View>
-            </View>
+            )}
           </View>
         </View>
 
@@ -1083,6 +1219,44 @@ const styles = StyleSheet.create({
     color: '#e2e8f0',
     fontSize: 12,
     fontWeight: '500',
+  },
+  weatherLoadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    gap: 10,
+  },
+  weatherLoadingText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+  },
+  weatherErrorContainer: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    gap: 12,
+  },
+  weatherErrorText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  weatherErrorSubtext: {
+    color: '#a0aec0',
+    fontSize: 12,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  weatherRetryButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  weatherRetryText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
   },
   pricesCardFull: {
     backgroundColor: '#4a5568',
