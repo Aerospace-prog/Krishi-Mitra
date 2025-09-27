@@ -222,32 +222,66 @@ export default function HomeScreen() {
           </View>
         )}
         {recommendation && (
-          <View>
-            <Text style={styles.recommendationTitle}>Farm Analysis Results</Text>
-            <View style={styles.recommendationContent}>
+          <View style={styles.recommendationContainer}>
+            <Text style={styles.recommendationTitle}>🌾 Farm Analysis Results</Text>
+            
+            <View style={styles.recommendationCard}>
               <View style={styles.recommendationItem}>
-                <Text style={styles.recommendationLabel}>Recommended Crop</Text>
+                <View style={styles.recommendationHeader}>
+                  <Ionicons name="leaf" size={20} color="#4CAF50" />
+                  <Text style={styles.recommendationLabel}>Recommended Crop</Text>
+                </View>
                 <Text style={styles.recommendationValue}>{recommendation.crop_recommendation}</Text>
               </View>
-              
+            </View>
+            
+            <View style={styles.recommendationCard}>
               <View style={styles.recommendationItem}>
-                <Text style={styles.recommendationLabel}>AI Advice</Text>
+                <View style={styles.recommendationHeader}>
+                  <Ionicons name="bulb" size={20} color="#4CAF50" />
+                  <Text style={styles.recommendationLabel}>AI Advice</Text>
+                </View>
                 <Text style={styles.recommendationAdvice}>{recommendation.advice}</Text>
               </View>
-              
+            </View>
+            
+            <View style={styles.recommendationCard}>
               <View style={styles.recommendationItem}>
-                <Text style={styles.recommendationLabel}>Location</Text>
+                <View style={styles.recommendationHeader}>
+                  <Ionicons name="location" size={20} color="#4CAF50" />
+                  <Text style={styles.recommendationLabel}>Location</Text>
+                </View>
                 <Text style={styles.recommendationText}>{recommendation.location_info?.state || 'Unknown'}</Text>
               </View>
-              
+            </View>
+            
+            <View style={styles.recommendationCard}>
               <View style={styles.recommendationItem}>
-                <Text style={styles.recommendationLabel}>Environmental Data</Text>
+                <View style={styles.recommendationHeader}>
+                  <Ionicons name="analytics" size={20} color="#4CAF50" />
+                  <Text style={styles.recommendationLabel}>Environmental Data</Text>
+                </View>
                 <View style={styles.environmentalData}>
-                  <Text style={styles.dataItem}>🌡️ Temperature: {String(recommendation.live_data_used?.temperature)}°C</Text>
-                  <Text style={styles.dataItem}>💧 Humidity: {String(recommendation.live_data_used?.humidity)}%</Text>
-                  <Text style={styles.dataItem}>🧪 pH: {String(recommendation.live_data_used?.ph)}</Text>
-                  <Text style={styles.dataItem}>🌱 Nitrogen: {String(recommendation.live_data_used?.N)} kg/ha</Text>
-                  <Text style={styles.dataItem}>🌧️ Rainfall: {String(recommendation.live_data_used?.rainfall_mm_monthly_avg)} mm/month</Text>
+                  <View style={styles.dataRow}>
+                    <Ionicons name="thermometer" size={16} color="#FF6B6B" />
+                    <Text style={styles.dataItem}>Temperature: {String(recommendation.live_data_used?.temperature)}°C</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Ionicons name="water" size={16} color="#4ECDC4" />
+                    <Text style={styles.dataItem}>Humidity: {String(recommendation.live_data_used?.humidity)}%</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Ionicons name="flask" size={16} color="#45B7D1" />
+                    <Text style={styles.dataItem}>pH: {String(recommendation.live_data_used?.ph)}</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Ionicons name="nutrition" size={16} color="#96CEB4" />
+                    <Text style={styles.dataItem}>Nitrogen: {String(recommendation.live_data_used?.N)} kg/ha</Text>
+                  </View>
+                  <View style={styles.dataRow}>
+                    <Ionicons name="rainy" size={16} color="#74B9FF" />
+                    <Text style={styles.dataItem}>Rainfall: {String(recommendation.live_data_used?.rainfall_mm_monthly_avg)} mm/month</Text>
+                  </View>
                 </View>
               </View>
             </View>
@@ -691,53 +725,92 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
   },
-  recommendationCard: {
-    backgroundColor: '#e2e8f0',
+  recommendationContainer: {
     marginHorizontal: 20,
-    borderRadius: 12,
+    backgroundColor: '#4a5568',
+    borderRadius: 16,
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 30,
+  },
+  recommendationCard: {
+    backgroundColor: '#4a5568',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#718096',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   recommendationTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#2d3748',
-    marginBottom: 16,
+    color: '#ffffff',
+    marginBottom: 20,
     textAlign: 'center',
   },
   recommendationContent: {
     gap: 16,
+    // backgroundColor: '#4a5568',
   },
   recommendationItem: {
+    gap: 12,
+    backgroundColor: '#4a5568',
+  },
+  recommendationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+    marginBottom: 8,
+    backgroundColor: '#4a5568',
   },
   recommendationLabel: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
     color: '#4CAF50',
     textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   recommendationValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#2d3748',
+    color: '#ffffff',
+    marginTop: 4,
   },
   recommendationAdvice: {
-    fontSize: 14,
-    color: '#4a5568',
-    lineHeight: 20,
+    fontSize: 15,
+    color: '#e2e8f0',
+    lineHeight: 22,
+    marginTop: 4,
   },
   recommendationText: {
-    fontSize: 14,
-    color: '#4a5568',
+    fontSize: 16,
+    color: '#ffffff',
+    fontWeight: '500',
+    marginTop: 4,
   },
   environmentalData: {
-    gap: 8,
+    gap: 12,
+    marginTop: 8,
+    backgroundColor: '#4a5568',
+  },
+  dataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#2d3748',
+    borderRadius: 8,
   },
   dataItem: {
-    fontSize: 12,
-    color: '#718096',
-    lineHeight: 18,
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '500',
+    flex: 1,
   },
   chatButtonContainer: {
     position: 'absolute',
@@ -948,108 +1021,144 @@ const styles = StyleSheet.create({
   // History modal styles
   historyModal: {
     backgroundColor: '#4a5568',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     width: '100%',
-    height: '80%',
+    height: '85%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   historyList: {
+    
     flex: 1,
+    paddingTop: 8,
   },
   emptyHistory: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyHistoryText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyHistorySubtext: {
-    fontSize: 14,
-    color: '#a0d9b4',
-    textAlign: 'center',
-    lineHeight: 20,
+    paddingVertical: 80,
+    
     paddingHorizontal: 20,
   },
-  historyItem: {
-    backgroundColor: '#2d3748',
-    borderRadius: 12,
-    padding: 16,
+  emptyHistoryText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 20,
     marginBottom: 12,
+    textAlign: 'center',
+  },
+  emptyHistorySubtext: {
+    fontSize: 16,
+    color: '#a0d9b4',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 10,
+  },
+  historyItem: {
+    // backgroundColor: '#2d3748',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#718096',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4a5568',
   },
   historyDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
   },
   historyDate: {
-    fontSize: 14,
-    color: '#ffffff',
-    fontWeight: '600',
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: '700',
   },
   historyTime: {
-    fontSize: 12,
-    color: '#a0d9b4',
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '500',
   },
   historyLocationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
+    backgroundColor: '#4a5568',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   historyLocation: {
-    fontSize: 12,
-    color: '#a0d9b4',
+    fontSize: 13,
+    color: '#ffffff',
+    fontWeight: '600',
   },
   historyContent: {
-    gap: 12,
+    gap: 16,
   },
   historyCropContainer: {
     backgroundColor: '#4a5568',
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
   },
   historyLabel: {
     fontSize: 12,
-    color: '#a0d9b4',
-    marginBottom: 4,
-    fontWeight: '600',
+    color: '#4CAF50',
+    marginBottom: 8,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   historyCrop: {
-    fontSize: 16,
-    color: '#4CAF50',
+    fontSize: 18,
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   historyAdviceContainer: {
     backgroundColor: '#4a5568',
-    padding: 12,
-    borderRadius: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#74B9FF',
   },
   historyAdvice: {
-    fontSize: 14,
-    color: '#ffffff',
-    lineHeight: 18,
+    fontSize: 15,
+    color: '#e2e8f0',
+    lineHeight: 22,
   },
   historyWeatherContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingTop: 8,
+    gap: 10,
+    backgroundColor: '#4a5568',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginTop: 8,
   },
   historyWeather: {
-    fontSize: 12,
-    color: '#a0d9b4',
+    fontSize: 13,
+    color: '#ffffff',
+    fontWeight: '500',
   },
 });
 
