@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, SafeAreaView, Modal, Image, Alert, ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
 import { Text, View } from '@/components/Themed';
@@ -13,6 +13,16 @@ type RecommendationResponse = {
   location_info: { state?: string };
 };
 
+type HistoryItem = {
+  id: string;
+  date: string;
+  time: string;
+  crop_recommendation: string;
+  advice: string;
+  location: string;
+  weather: string;
+};
+
 export default function HomeScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
@@ -22,6 +32,8 @@ export default function HomeScreen() {
   const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [analysisHistory, setAnalysisHistory] = useState<HistoryItem[]>([]);
 
   const handleLogout = async () => {
     try {
@@ -30,6 +42,21 @@ export default function HomeScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out');
     }
+  };
+
+  const saveToHistory = (recommendation: RecommendationResponse) => {
+    const now = new Date();
+    const historyItem: HistoryItem = {
+      id: Date.now().toString(),
+      date: now.toLocaleDateString(),
+      time: now.toLocaleTimeString(),
+      crop_recommendation: recommendation.crop_recommendation,
+      advice: recommendation.advice,
+      location: recommendation.location_info?.state || 'Unknown',
+      weather: 'Mostly sunny, 28°C' // You can make this dynamic based on actual weather data
+    };
+    
+    setAnalysisHistory(prev => [historyItem, ...prev]);
   };
 
   async function requestAndFetch() {
@@ -64,6 +91,8 @@ export default function HomeScreen() {
       }
       const data = (await res.json()) as RecommendationResponse;
       setRecommendation(data);
+      // Save to history
+      saveToHistory(data);
     } catch (e: any) {
       console.error(e);
       setError(e.message || 'Something went wrong');
@@ -115,62 +144,64 @@ export default function HomeScreen() {
           {/* </View> */}
         </ImageBackground>
 
-        {/* Cards Grid */}
-        <View style={styles.cardsContainer}>
-          {/* Weather Card */}
-          <View style={styles.weatherCard}>
+        {/* Weather Card - Full Width */}
+        <View style={styles.fullWidthCardContainer}>
+          <View style={styles.weatherCardFull}>
             <Text style={styles.cardTitle}>Weather</Text>
-            <View style={styles.weatherContent}>
-              <View style={styles.weatherIcon}>
-                <Ionicons name="sunny" size={32} color="#FFD700" />
-                <Ionicons name="cloud" size={20} color="#fff" style={styles.cloudIcon} />
+            <View style={styles.weatherContentFull}>
+              <View style={styles.weatherLeftSection}>
+                <View style={styles.weatherIcon}>
+                  <Ionicons name="sunny" size={40} color="#FFD700" />
+                  <Ionicons name="cloud" size={24} color="#fff" style={styles.cloudIcon} />
+                </View>
+                <View style={styles.weatherInfo}>
+                  <Text style={styles.weatherLocation}>Bengaluru, 28°</Text>
+                  <Text style={styles.weatherDesc}>Mostly sunny</Text>
+                </View>
               </View>
-              <Text style={styles.weatherLocation}>Bengaluru, 28°</Text>
-              <Text style={styles.weatherDesc}>Mostly sunny</Text>
-              <Ionicons name="notifications-outline" size={16} color="#4CAF50" style={styles.weatherNotification} />
-            </View>
-          </View>
-
-          {/* Market Pulse Card */}
-          <View style={styles.marketCard}>
-            <Text style={styles.cardTitle}>Market Pulse</Text>
-            <View style={styles.marketContent}>
-              <View style={styles.marketCircle}>
-                <Text style={styles.marketPercentage}>72%</Text>
-              </View>
-              <View style={styles.marketChart}>
-                <Ionicons name="trending-up" size={60} color="#4CAF50" />
-              </View>
-              <View style={styles.marketInfo}>
-                <Text style={styles.marketCrop}>Tomato</Text>
-                <Text style={styles.marketCrop}>Demand</Text>
-                <Text style={styles.marketPrice}>₹38/kg</Text>
+              <View style={styles.weatherRightSection}>
+                <Ionicons name="notifications-outline" size={20} color="#4CAF50" />
+                <Text style={styles.weatherDetails}>Humidity: 65%</Text>
+                <Text style={styles.weatherDetails}>Wind: 12 km/h</Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Second Row Cards */}
-        <View style={styles.cardsContainer}>
-          {/* Farm Status Card */}
-          <View style={styles.farmCard}>
-            <Text style={styles.cardTitle}>My Farm Status</Text>
-            <Text style={styles.farmHealth}>Soil Health:</Text>
-            <Text style={styles.farmHealthStatus}>Excellent</Text>
-            <Text style={styles.farmCrop}>Last Crop: Rice</Text>
-            <View style={styles.farmPlantIcon}>
-              <Ionicons name="leaf" size={40} color="#4CAF50" />
-            </View>
-          </View>
-
-          {/* Quick Market Prices */}
-          <View style={styles.pricesCard}>
+        {/* Market Prices Card - Full Width */}
+        <View style={styles.fullWidthCardContainer}>
+          <View style={styles.pricesCardFull}>
             <Text style={styles.cardTitle}>Quick Market Prices</Text>
-            <View style={styles.priceContent}>
-              <Text style={styles.priceItem}>Potato: ₹15/kg</Text>
-              <View style={styles.priceIndicator}>
-                <Ionicons name="arrow-up" size={20} color="#4CAF50" />
-                <Text style={styles.priceChange}>5%</Text>
+            <View style={styles.priceContentFull}>
+              <View style={styles.priceRow}>
+                <View style={styles.priceItemContainer}>
+                  <Text style={styles.priceItemName}>Potato</Text>
+                  <Text style={styles.priceItemValue}>₹15/kg</Text>
+                </View>
+                <View style={styles.priceIndicator}>
+                  <Ionicons name="arrow-up" size={20} color="#4CAF50" />
+                  <Text style={styles.priceChange}>5%</Text>
+                </View>
+              </View>
+              <View style={styles.priceRow}>
+                <View style={styles.priceItemContainer}>
+                  <Text style={styles.priceItemName}>Tomato</Text>
+                  <Text style={styles.priceItemValue}>₹38/kg</Text>
+                </View>
+                <View style={styles.priceIndicator}>
+                  <Ionicons name="arrow-up" size={20} color="#4CAF50" />
+                  <Text style={styles.priceChange}>8%</Text>
+                </View>
+              </View>
+              <View style={styles.priceRow}>
+                <View style={styles.priceItemContainer}>
+                  <Text style={styles.priceItemName}>Rice</Text>
+                  <Text style={styles.priceItemValue}>₹45/kg</Text>
+                </View>
+                <View style={styles.priceIndicator}>
+                  <Ionicons name="arrow-down" size={20} color="#f44336" />
+                  <Text style={[styles.priceChange, { color: '#f44336' }]}>2%</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -190,10 +221,8 @@ export default function HomeScreen() {
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
-
-        {/* Recommendation Results */}
         {recommendation && (
-          <View style={styles.recommendationCard}>
+          <View>
             <Text style={styles.recommendationTitle}>Farm Analysis Results</Text>
             <View style={styles.recommendationContent}>
               <View style={styles.recommendationItem}>
@@ -296,7 +325,13 @@ export default function HomeScreen() {
             </View>
 
             <View style={styles.profileOptions}>
-              <Pressable style={styles.profileOption}>
+              <Pressable 
+                style={styles.profileOption}
+                onPress={() => {
+                  setShowProfile(false);
+                  setShowHistory(true);
+                }}
+              >
                 <Ionicons name="time" size={20} color="#4CAF50" />
                 <Text style={styles.profileOptionText}>History</Text>
                 <Ionicons name="chevron-forward" size={20} color="#666" />
@@ -314,6 +349,70 @@ export default function HomeScreen() {
                 <Ionicons name="chevron-forward" size={20} color="#666" />
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* History Modal */}
+      <Modal
+        visible={showHistory}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowHistory(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.historyModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Farm Analysis History</Text>
+              <Pressable onPress={() => setShowHistory(false)}>
+                <Ionicons name="close" size={24} color="#666" />
+              </Pressable>
+            </View>
+            
+            <ScrollView style={styles.historyList}>
+              {analysisHistory.length === 0 ? (
+                <View style={styles.emptyHistory}>
+                  <Ionicons name="time-outline" size={48} color="#666" />
+                  <Text style={styles.emptyHistoryText}>No analysis history yet</Text>
+                  <Text style={styles.emptyHistorySubtext}>
+                    Use "Analyze My Farm" to get crop recommendations and they'll appear here
+                  </Text>
+                </View>
+              ) : (
+                analysisHistory.map((item) => (
+                  <View key={item.id} style={styles.historyItem}>
+                    <View style={styles.historyHeader}>
+                      <View style={styles.historyDateContainer}>
+                        <Ionicons name="calendar" size={16} color="#4CAF50" />
+                        <Text style={styles.historyDate}>{item.date}</Text>
+                        <Text style={styles.historyTime}>{item.time}</Text>
+                      </View>
+                      <View style={styles.historyLocationContainer}>
+                        <Ionicons name="location" size={16} color="#4CAF50" />
+                        <Text style={styles.historyLocation}>{item.location}</Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.historyContent}>
+                      <View style={styles.historyCropContainer}>
+                        <Text style={styles.historyLabel}>Recommended Crop:</Text>
+                        <Text style={styles.historyCrop}>{item.crop_recommendation}</Text>
+                      </View>
+                      
+                      <View style={styles.historyAdviceContainer}>
+                        <Text style={styles.historyLabel}>AI Advice:</Text>
+                        <Text style={styles.historyAdvice}>{item.advice}</Text>
+                      </View>
+                      
+                      <View style={styles.historyWeatherContainer}>
+                        <Ionicons name="partly-sunny" size={16} color="#FFD700" />
+                        <Text style={styles.historyWeather}>{item.weather}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -345,7 +444,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#2d3748'
+    backgroundColor: 'transparent',
   },
   iconButton: {
     padding: 8,
@@ -400,11 +499,11 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
-  cardsContainer: {
-    flexDirection: 'row',
+  fullWidthCardContainer: {
     paddingHorizontal: 20,
-    gap: 12,
     marginBottom: 16,
+    // backgroundColor: '#fefcbf',
+    backgroundColor: '#2d3748',
     marginTop: 20,
   },
   weatherCard: {
@@ -419,33 +518,34 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: '#ffffff',
     marginBottom: 12,
   },
   weatherContent: {
     flex: 1,
     justifyContent: 'space-between',
-    backgroundColor: '#4a5568',
+    backgroundColor: 'transparent',
   },
   weatherIcon: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-    backgroundColor: '#4a5568',
+    backgroundColor: 'transparent',
   },
   cloudIcon: {
     marginLeft: -10,
     marginTop: 5,
   },
   weatherLocation: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   weatherDesc: {
-    color: '#a0aec0',
+    color: '#e2e8f0',
     fontSize: 14,
+    fontWeight: '500',
   },
   weatherNotification: {
     position: 'absolute',
@@ -475,6 +575,7 @@ const styles = StyleSheet.create({
     borderColor: '#4CAF50',
     justifyContent: 'center',
     alignItems: 'center',
+  
   },
   marketPercentage: {
     fontSize: 16,
@@ -551,6 +652,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    backgroundColor: 'transparent',
   },
   priceChange: {
     color: '#4CAF50',
@@ -641,11 +743,15 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 100,
     right: 20,
+    backgroundColor: '#4a5568',
+    borderRadius: 28,
+    padding: 8,
+    margin: 8,
   },
   chatButton: {
     backgroundColor: '#4CAF50',
-    width: 56,
-    height: 56,
+    width: 46,
+    height: 46,
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
@@ -671,7 +777,7 @@ const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   profileModal: {
-    backgroundColor: '#fff',
+    backgroundColor: '#4a5568',
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -681,12 +787,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#4a5568',
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#2d3748',
+    color: '#a0d9b4',
   },
   // Notification styles
   notificationList: {
@@ -716,12 +823,17 @@ const styles = StyleSheet.create({
   profileInfo: {
     alignItems: 'center',
     marginBottom: 30,
+    // backgroundColor: '#4a5568',
+    padding: 20,
+    borderRadius: 12,
   },
   profileModalImage: {
     width: 80,
     height: 80,
     borderRadius: 40,
     marginBottom: 12,
+    // backgroundColor: '#fff',
+    
   },
   profileModalImageFallback: {
     width: 80,
@@ -735,14 +847,16 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2d3748',
+    color: '#a0d9b4',
     marginBottom: 4,
+    
   },
   profileEmail: {
     fontSize: 14,
-    color: '#666',
+    color: '#a0d9b4',
   },
   profileOptions: {
+    backgroundColor: '#4a5568',
     gap: 8,
   },
   profileOption: {
@@ -758,4 +872,183 @@ const styles = StyleSheet.create({
     color: '#2d3748',
     flex: 1,
   },
+  // Full width card styles
+  weatherCardFull: {
+    backgroundColor: '#4a5568',
+    borderRadius: 12,
+    padding: 16,
+    minHeight: 120,
+    borderWidth: 1,
+    borderColor: '#718096',
+  },
+  weatherContentFull: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    backgroundColor: 'transparent',
+  },
+  weatherLeftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  weatherInfo: {
+    marginLeft: 16,
+    backgroundColor: 'transparent',
+  },
+  weatherRightSection: {
+    alignItems: 'flex-end',
+    gap: 4,
+    backgroundColor: 'transparent',
+  },
+  weatherDetails: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  pricesCardFull: {
+    backgroundColor: '#4a5568',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#718096',
+  },
+  priceContentFull: {
+    marginTop: 12,
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#2d3748',
+    borderRadius: 8,
+  },
+  priceItemContainer: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  priceItemName: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  priceItemValue: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  // History modal styles
+  historyModal: {
+    backgroundColor: '#4a5568',
+    borderRadius: 16,
+    padding: 20,
+    width: '100%',
+    height: '80%',
+  },
+  historyList: {
+    flex: 1,
+  },
+  emptyHistory: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyHistoryText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyHistorySubtext: {
+    fontSize: 14,
+    color: '#a0d9b4',
+    textAlign: 'center',
+    lineHeight: 20,
+    paddingHorizontal: 20,
+  },
+  historyItem: {
+    backgroundColor: '#2d3748',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#718096',
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  historyDateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  historyDate: {
+    fontSize: 14,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
+  historyTime: {
+    fontSize: 12,
+    color: '#a0d9b4',
+  },
+  historyLocationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  historyLocation: {
+    fontSize: 12,
+    color: '#a0d9b4',
+  },
+  historyContent: {
+    gap: 12,
+  },
+  historyCropContainer: {
+    backgroundColor: '#4a5568',
+    padding: 12,
+    borderRadius: 8,
+  },
+  historyLabel: {
+    fontSize: 12,
+    color: '#a0d9b4',
+    marginBottom: 4,
+    fontWeight: '600',
+  },
+  historyCrop: {
+    fontSize: 16,
+    color: '#4CAF50',
+    fontWeight: 'bold',
+  },
+  historyAdviceContainer: {
+    backgroundColor: '#4a5568',
+    padding: 12,
+    borderRadius: 8,
+  },
+  historyAdvice: {
+    fontSize: 14,
+    color: '#ffffff',
+    lineHeight: 18,
+  },
+  historyWeatherContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingTop: 8,
+  },
+  historyWeather: {
+    fontSize: 12,
+    color: '#a0d9b4',
+  },
 });
+
