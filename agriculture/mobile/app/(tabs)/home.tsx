@@ -365,7 +365,7 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Floating Chat Button */}
-      <TouchableOpacity style={styles.floatingButton} onPress={handleChatPress}>
+      <TouchableOpacity style={styles.floatingButton} >
         <Ionicons name="chatbubbles" size={24} color="white" />
       </TouchableOpacity>
 
