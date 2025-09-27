@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, SafeAreaView, Modal, Image, Alert, ImageBackground } from 'react-native';
+import { useState, useEffect, useRef } from 'react';
+import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, SafeAreaView, Modal, Image, Alert, ImageBackground, Animated, TouchableOpacity } from 'react-native';
 import * as Location from 'expo-location';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +34,11 @@ export default function HomeScreen() {
   const [showProfile, setShowProfile] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<HistoryItem[]>([]);
+  
+  // Handle chat button press
+  const handleChatPress = () => {
+    Alert.alert('Chat', 'Chat feature coming soon!');
+  };
 
   const handleLogout = async () => {
     try {
@@ -132,7 +137,10 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+      >
         {/* Welcome Section with Background */}
         <ImageBackground 
           source={require('@/assets/images/farm-field-bg.jpg')}
@@ -288,13 +296,12 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Chat Button */}
-        <View style={styles.chatButtonContainer}>
-          <Pressable style={styles.chatButton}>
-            <Ionicons name="chatbubbles" size={24} color="#fff" />
-          </Pressable>
-        </View>
       </ScrollView>
+
+      {/* Floating Chat Button */}
+      <TouchableOpacity style={styles.floatingButton} onPress={handleChatPress}>
+        <Ionicons name="chatbubbles" size={24} color="white" />
+      </TouchableOpacity>
 
       {/* Notifications Modal */}
       <Modal
@@ -308,7 +315,7 @@ export default function HomeScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Notifications</Text>
               <Pressable onPress={() => setShowNotifications(false)}>
-                <Ionicons name="close" size={24} color="#666" />
+                <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
             <ScrollView style={styles.notificationList}>
@@ -342,7 +349,7 @@ export default function HomeScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Profile</Text>
               <Pressable onPress={() => setShowProfile(false)}>
-                <Ionicons name="close" size={24} color="#666" />
+                <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
             
@@ -399,7 +406,7 @@ export default function HomeScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Farm Analysis History</Text>
               <Pressable onPress={() => setShowHistory(false)}>
-                <Ionicons name="close" size={24} color="#666" />
+                <Ionicons name="close" size={24} color="#fff" />
               </Pressable>
             </View>
             
@@ -812,27 +819,21 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
-  chatButtonContainer: {
-    position: 'absolute',
-    bottom: 100,
-    right: 20,
-    backgroundColor: '#4a5568',
-    borderRadius: 28,
-    padding: 8,
-    margin: 8,
-  },
-  chatButton: {
+  floatingButton: {
     backgroundColor: '#4CAF50',
-    width: 46,
-    height: 46,
-    borderRadius: 28,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#4CAF50',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    position: 'absolute',
+    bottom: 40,
+    right: 30,
+    elevation: 5, // For Android shadow
+    shadowColor: '#000', // For iOS shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   // Modal styles
   modalOverlay: {
@@ -843,7 +844,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   notificationModal: {
-    backgroundColor: '#fff',
+    backgroundColor: '#4a5568',
     borderRadius: 16,
     padding: 20,
     width: '100%',
@@ -875,7 +876,7 @@ const styles = StyleSheet.create({
   },
   notificationText: {
     fontSize: 16,
-    color: '#666',
+    color: '#000',
     textAlign: 'center',
     marginBottom: 20,
   },
