@@ -26,7 +26,7 @@ export default function HomeScreen() {
   const handleLogout = async () => {
     try {
       await signOut();
-      router.replace('/');
+      router.replace('/(auth)');
     } catch (error) {
       Alert.alert('Error', 'Failed to sign out');
     }
@@ -237,7 +237,7 @@ export default function HomeScreen() {
       <Modal
         visible={showNotifications}
         transparent={true}
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowNotifications(false)}
       >
         <View style={styles.modalOverlay}>
@@ -679,6 +679,7 @@ const styles = StyleSheet.create({
   },
   modalHeader: {
     flexDirection: 'row',
+    backgroundColor: '#fff', 
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
@@ -687,6 +688,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2d3748',
+    backgroundColor:"#fff"
   },
   // Notification styles
   notificationList: {
