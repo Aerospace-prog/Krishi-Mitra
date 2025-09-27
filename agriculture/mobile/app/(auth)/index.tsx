@@ -20,10 +20,7 @@ export default function LandingScreen() {
   // Redirect authenticated users directly to home
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      // Use setTimeout to ensure smooth navigation
-      setTimeout(() => {
-        router.replace('/(tabs)/home');
-      }, 300);
+      router.replace('/(tabs)/home');
     }
   }, [isLoaded, isSignedIn, router]);
 
@@ -40,7 +37,7 @@ export default function LandingScreen() {
   // This return statement is for when user is not signed in
   return (
     <ImageBackground 
-      source={require('../assets/images/bg2.jpg')} 
+      source={require('../../assets/images/bg2.jpg')} 
       style={styles.backgroundImage}
       resizeMode="contain"
       imageStyle={styles.backgroundImageStyle}
@@ -158,5 +155,3 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
-
-
