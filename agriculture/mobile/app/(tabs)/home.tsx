@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, SafeAreaView, Modal, Image, Alert, ImageBackground } from 'react-native';
 import * as Location from 'expo-location';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useUser, useAuth } from '@clerk/clerk-expo';
@@ -23,6 +24,8 @@ type HistoryItem = {
   weather: string;
 };
 
+const HISTORY_STORAGE_KEY_PREFIX = '@krishi_mitra_analysis_history_user_';
+
 export default function HomeScreen() {
   const { user } = useUser();
   const { signOut } = useAuth();
@@ -35,8 +38,68 @@ export default function HomeScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState<HistoryItem[]>([]);
 
+  // Get user-specific storage key
+  const getUserStorageKey = () => {
+    if (!user?.id) return null;
+    return `${HISTORY_STORAGE_KEY_PREFIX}${user.id}`;
+  };
+
+  // Load history from AsyncStorage on component mount and when user changes
+  useEffect(() => {
+    if (user?.id) {
+      loadHistoryFromStorage();
+    } else {
+      // Clear history if no user is logged in
+      setAnalysisHistory([]);
+    }
+  }, [user?.id]);
+
+  const loadHistoryFromStorage = async () => {
+    try {
+      const storageKey = getUserStorageKey();
+      if (!storageKey) return;
+      
+      const storedHistory = await AsyncStorage.getItem(storageKey);
+      if (storedHistory) {
+        const parsedHistory: HistoryItem[] = JSON.parse(storedHistory);
+        setAnalysisHistory(parsedHistory);
+      } else {
+        // No history found for this user
+        setAnalysisHistory([]);
+      }
+    } catch (error) {
+      console.error('Error loading history from storage:', error);
+      setAnalysisHistory([]);
+    }
+  };
+
+  const saveHistoryToStorage = async (history: HistoryItem[]) => {
+    try {
+      const storageKey = getUserStorageKey();
+      if (!storageKey) return;
+      
+      await AsyncStorage.setItem(storageKey, JSON.stringify(history));
+    } catch (error) {
+      console.error('Error saving history to storage:', error);
+    }
+  };
+
+  const clearHistoryFromStorage = async () => {
+    try {
+      const storageKey = getUserStorageKey();
+      if (!storageKey) return;
+      
+      await AsyncStorage.removeItem(storageKey);
+      setAnalysisHistory([]);
+    } catch (error) {
+      console.error('Error clearing history from storage:', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
+      // Clear current user's history from state (not from storage)
+      setAnalysisHistory([]);
       await signOut();
       router.replace('/(auth)');
     } catch (error) {
@@ -44,7 +107,13 @@ export default function HomeScreen() {
     }
   };
 
-  const saveToHistory = (recommendation: RecommendationResponse) => {
+  const saveToHistory = async (recommendation: RecommendationResponse) => {
+    // Only save history if user is logged in
+    if (!user?.id) {
+      console.warn('Cannot save history: No user logged in');
+      return;
+    }
+
     const now = new Date();
     const historyItem: HistoryItem = {
       id: Date.now().toString(),
@@ -56,7 +125,9 @@ export default function HomeScreen() {
       weather: 'Mostly sunny, 28°C' // You can make this dynamic based on actual weather data
     };
     
-    setAnalysisHistory(prev => [historyItem, ...prev]);
+    const updatedHistory = [historyItem, ...analysisHistory];
+    setAnalysisHistory(updatedHistory);
+    await saveHistoryToStorage(updatedHistory);
   };
 
   async function requestAndFetch() {
@@ -398,9 +469,32 @@ export default function HomeScreen() {
           <View style={styles.historyModal}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Farm Analysis History</Text>
-              <Pressable onPress={() => setShowHistory(false)}>
-                <Ionicons name="close" size={24} color="#666" />
-              </Pressable>
+              <View style={styles.historyHeaderActions}>
+                {analysisHistory.length > 0 && (
+                  <Pressable 
+                    style={styles.clearHistoryButton}
+                    onPress={() => {
+                      Alert.alert(
+                        'Clear History',
+                        'Are you sure you want to clear all analysis history? This action cannot be undone.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Clear', 
+                            style: 'destructive',
+                            onPress: clearHistoryFromStorage 
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <Ionicons name="trash" size={20} color="#f44336" />
+                  </Pressable>
+                )}
+                <Pressable onPress={() => setShowHistory(false)}>
+                  <Ionicons name="close" size={24} color="#666" />
+                </Pressable>
+              </View>
             </View>
             
             <ScrollView style={styles.historyList}>
@@ -868,6 +962,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#a0d9b4',
     // backgroundColor:"#fff"
+  },
+  historyHeaderActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  clearHistoryButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(244, 67, 54, 0.3)',
   },
   // Notification styles
   notificationList: {
