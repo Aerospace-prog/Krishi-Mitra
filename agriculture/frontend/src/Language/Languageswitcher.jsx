@@ -43,12 +43,23 @@ const Languageswitcher = () => {
     setOpen(false);
   };
 
+  const getCurrentLanguage = () => {
+    const current = indianLanguages.find(lang => lang.code.toLowerCase() === i18n.language);
+    return current || indianLanguages[0];
+  };
+
   return (
     <div className="language-switcher-dropdown" ref={dropdownRef}>
-      <button className="lang-btn" onClick={() => setOpen(!open)}>
+      <button 
+        className="lang-btn" 
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label="Select language"
+      >
         <span className="globe-icon" role="img" aria-label="language">🌐</span>
-        <span className="highlight-text">Select Language</span>
-        <span className="arrow">{open ? '▲' : '▼'}</span>
+        <span className="current-lang">{getCurrentLanguage().code}</span>
+        <span className="arrow">▼</span>
       </button>
       {open && (
         <div className="lang-dropdown">
