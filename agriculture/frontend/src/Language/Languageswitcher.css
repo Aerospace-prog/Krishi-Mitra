@@ -3,111 +3,178 @@
   display: inline-block;
 }
 
-
 .lang-btn {
-  background: rgba(58, 114, 55, 0.85);
-  border: 2px solid #a8e063;
-  border-radius: 14px;
-  padding: 16px 24px 14px 24px;
-  font-size: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50px;
+  padding: 12px 20px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 4px 12px rgba(58, 114, 55, 0.20);
-  width: 260px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  min-width: 100px;
   justify-content: center;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.lang-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s;
+}
+
+.lang-btn:hover::before {
+  left: 100%;
 }
 
 .lang-btn:hover,
 .lang-btn:focus {
-  background: rgba(58, 114, 55, 0.95);
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   outline: none;
 }
 
+.lang-btn:active {
+  transform: translateY(0);
+}
+
 .globe-icon {
-  font-size: 28px;
+  font-size: 18px;
   opacity: 0.9;
 }
 
-.highlight-text {
-  flex-grow: 1;
-  text-align: center;
+.current-lang {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .arrow {
-  font-size: 16px;
+  font-size: 12px;
+  opacity: 0.8;
+  transition: transform 0.3s ease;
+}
+
+.lang-btn[aria-expanded="true"] .arrow {
+  transform: rotate(180deg);
 }
 
 .lang-dropdown {
   position: absolute;
-  top: 64px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(58, 114, 55, 0.88);
-  border-radius: 18px;
-  box-shadow: 0 6px 20px rgba(58, 114, 55, 0.35);
-  width: 260px;
-  max-height: 264px;
+  top: 60px;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  width: 280px;
+  max-height: 320px;
   overflow-y: auto;
   z-index: 1000;
-  padding: 10px 0;
-  margin-top: 4px;
-  scrollbar-width: none;
+  padding: 8px;
+  margin-top: 8px;
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .lang-dropdown::-webkit-scrollbar {
-  width: 0 !important;
-  background: transparent;
+  width: 6px;
+}
+
+.lang-dropdown::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.lang-dropdown::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 3px;
+}
+
+.lang-dropdown::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .lang-option {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 13px 28px;
+  gap: 12px;
+  padding: 12px 16px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
-  color: #fff;
+  color: #333;
   user-select: none;
-  border-radius: 10px;
-  margin: 0 8px 2px 8px;
-  transition: background 0.16s;
+  border-radius: 12px;
+  margin-bottom: 4px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
 }
 
 .lang-option:hover {
-  background-color: rgba(168, 224, 99, 0.50);
-  color: #234a36;
-  font-weight: 700;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  color: white;
+  transform: translateX(4px);
 }
 
 .lang-option.selected {
-  background-color: #a8e063;
-  color: #234a36;
-  font-weight: 700;
+  background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+  color: white;
+  font-weight: 600;
 }
 
 .lang-flag {
-  font-size: 20px;
-  width: 26px;
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
 }
 
 .lang-code {
-  color: #c8e6a4;
   font-weight: 700;
-  letter-spacing: 0.05em;
-  width: 30px;
+  letter-spacing: 0.5px;
+  width: 32px;
+  font-size: 12px;
+  opacity: 0.8;
 }
 
 .lang-native {
   flex-grow: 1;
+  font-size: 14px;
 }
-.lang-code::before,
-.lang-option::before {
-  content: none !important;
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .lang-dropdown {
+    width: 260px;
+    right: -20px;
+  }
+  
+  .lang-btn {
+    min-width: 90px;
+    padding: 10px 16px;
+  }
 }

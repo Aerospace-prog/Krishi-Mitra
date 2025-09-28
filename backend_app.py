@@ -23,8 +23,9 @@ import uuid
 load_dotenv()
 app = FastAPI()
 
-# Enable CORS for frontend (Vite dev server and common localhost origins)
+# Enhanced CORS for cross-platform support (Web, Mobile, Development)
 origins = [
+    # Web development servers
     "http://localhost:5173",
     "http://127.0.0.1:5173",
     "http://localhost:5174",
@@ -34,12 +35,25 @@ origins = [
     "http://localhost",
     "http://127.0.0.1",
     "*",  # Allow all origins for testing (remove in production)
+    # Expo development servers
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
+    "http://localhost:19000",
+    "http://127.0.0.1:19000",
+    "http://localhost:19006",
+    "http://127.0.0.1:19006",
+    # Production domains 
+    # "https://your-web-app.com",
+    # "https://your-mobile-app.expo.dev",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # More permissive for testing
+    # Enhanced regex for Expo tunneling, LAN IPs, and development environments
+    allow_origin_regex=r"^https?://((.*\\.expo\\.dev)|(.*\\.ngrok\\.io)|(localhost|127\\.0\\.0\\.1)(:\\d+)?|((?:192\\.168|10\\.0|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.(?:\\d{1,3}\\.){1}\\d{1,3})(:\\d+)?)$",
     allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
@@ -83,10 +97,28 @@ STATE_CROPS = {
 }
 
 
-# --- Part 4: Pydantic Model for GPS Input ---
+# --- Part 4: Pydantic Models for Cross-Platform API ---
 class LocationInput(BaseModel):
     latitude: float
     longitude: float
+
+class RecommendationResponse(BaseModel):
+    crop_recommendation: str
+    advice: str
+    live_data_used: dict
+    location_info: dict
+    confidence_score: float = 0.0
+    alternative_crops: list = []
+
+class HealthResponse(BaseModel):
+    status: str
+    version: str = "1.0.0"
+    services: dict
+
+class ErrorResponse(BaseModel):
+    error: str
+    message: str
+    code: int
 
 # --- Part 5: Load Assets (ML Model & API Keys) ---
 model_path = os.path.join('model', 'crop_recommender.joblib')
@@ -147,6 +179,60 @@ async def get_weather_data(lat: float, lon: float, api_key: str) -> dict | None:
         except httpx.RequestError as e:
             # Catch Timeouts and other request errors specifically
             print(f"WeatherAPI.com request failed with a connection/read error: {e}")
+            return None
+
+async def get_comprehensive_weather_data(lat: float, lon: float, api_key: str) -> dict | None:
+    """Fetches comprehensive weather data from WeatherAPI.com for frontend display."""
+    url = f"http://api.weatherapi.com/v1/forecast.json?key={api_key}&q={lat},{lon}&days=7"
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        try:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract current weather
+            current = data['current']
+            location = data['location']
+            forecast = data['forecast']['forecastday']
+            
+            return {
+                "current": {
+                    "temp_c": current['temp_c'],
+                    "temp_f": current['temp_f'],
+                    "humidity": current['humidity'],
+                    "condition": current['condition']['text'],
+                    "condition_icon": current['condition']['icon'],
+                    "wind_kph": current['wind_kph'],
+                    "wind_mph": current['wind_mph'],
+                    "pressure_mb": current['pressure_mb'],
+                    "feelslike_c": current['feelslike_c'],
+                    "uv": current['uv'],
+                    "visibility_km": current['vis_km']
+                },
+                "location": {
+                    "name": location['name'],
+                    "region": location['region'],
+                    "country": location['country'],
+                    "lat": location['lat'],
+                    "lon": location['lon']
+                },
+                "forecast": [
+                    {
+                        "date": day['date'],
+                        "day": {
+                            "maxtemp_c": day['day']['maxtemp_c'],
+                            "mintemp_c": day['day']['mintemp_c'],
+                            "condition": day['day']['condition']['text'],
+                            "condition_icon": day['day']['condition']['icon']
+                        }
+                    } for day in forecast[:7]  # Next 7 days
+                ]
+            }
+        except httpx.HTTPStatusError as e:
+            print(f"WeatherAPI.com comprehensive request failed: {e}")
+            return None
+        except httpx.RequestError as e:
+            print(f"WeatherAPI.com comprehensive request failed with connection error: {e}")
             return None
 
 async def get_monthly_rainfall(lat: float, lon: float) -> float | None:
@@ -762,7 +848,7 @@ async def recommend_by_location(location: LocationInput):
         monthly_rainfall # Using the more accurate historical average rainfall
     ]], columns=feature_names)
 
-    # 4. The Smart Prediction Loop with Regional Filtering
+    # 4. Enhanced Smart Prediction with Confidence Scores and Alternatives
     probabilities = model.predict_proba(input_data)[0]
     all_crops = model.classes_
     sorted_predictions = sorted(zip(all_crops, probabilities), key=lambda x: x[1], reverse=True)
