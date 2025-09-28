@@ -7,7 +7,8 @@ import DiseaseDetection from '../../components/DiseaseDetection/DiseaseDetection
 import LoadingModal from '../../components/LoadingModal/LoadingModal';
 import ErrorModal from '../../components/ErrorModal/ErrorModal';
 import Chatbot from '../../components/Chatbot/Chatbot';
-import { Search, Bell, ChevronUp, ChevronDown, BarChart3, Scan, Droplets, Wind, AlertTriangle, TrendingUp, MessageSquare, Facebook, Twitter, Linkedin, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import MarketPrices from '../../components/MarketPrices/MarketPrices';
+import { Search, Bell, ChevronUp, ChevronDown, BarChart3, Scan, Droplets, Wind, AlertTriangle, TrendingUp, MessageSquare, Instagram, Twitter, Linkedin, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 
 const Home = () => {
   const { user } = useUser();
@@ -460,7 +461,12 @@ const Home = () => {
             <nav className="flex space-x-6">
               <a href="#" className="text-gray-700 hover:text-green-600">Home</a>
               <a href="#" className="text-gray-700 hover:text-green-600">Community</a>
-              <a href="#" className="text-gray-700 hover:text-green-600">Chatbot</a>
+              <button 
+                onClick={() => setChatbotOpen(true)}
+                className="text-gray-700 hover:text-green-600 transition-colors cursor-pointer"
+              >
+                Chatbot
+              </button>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
@@ -615,120 +621,10 @@ const Home = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 mt-6">
-            {/* Live Market Prices */}
-            <div className="col-span-2 bg-white rounded-lg p-6 shadow-sm market-prices-section">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Live Market Prices</h2>
-                <div className="text-sm text-gray-500">Updated: {new Date().toLocaleTimeString()}</div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="bg-gray-50 border-b-2 border-gray-200">
-                      <th className="text-left py-4 px-4 text-gray-700 font-semibold">Crop</th>
-                      <th className="text-left py-4 px-4 text-gray-700 font-semibold">Current Price (INR/quintal)</th>
-                      <th className="text-left py-4 px-4 text-gray-700 font-semibold">Change (24h)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Wheat</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹2,275</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-green-600 font-medium">
-                          <ChevronUp className="w-4 h-4 mr-1" />
-                          +1.2%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Rice (Basmati)</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹3,550</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-green-600 font-medium">
-                          <ChevronUp className="w-4 h-4 mr-1" />
-                          +0.5%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Maize</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹1,900</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-red-600 font-medium">
-                          <ChevronDown className="w-4 h-4 mr-1" />
-                          -0.8%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Soybean</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹4,820</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-green-600 font-medium">
-                          <ChevronUp className="w-4 h-4 mr-1" />
-                          +2.1%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Cotton</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹7,200</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-red-600 font-medium">
-                          <ChevronDown className="w-4 h-4 mr-1" />
-                          -0.3%
-                        </div>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-800">Potato</td>
-                      <td className="py-4 px-4 font-semibold text-gray-900">₹1,850</td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center text-gray-600 font-medium">0.0%</div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            
-            {/* Right Column - Additional Info */}
-            <div className="space-y-6">
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Market Insights</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Best Performing</span>
-                    <span className="text-sm font-semibold text-green-600">Soybean (+2.1%)</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Declining</span>
-                    <span className="text-sm font-semibold text-red-600">Maize (-0.8%)</span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                    <span className="text-sm text-gray-600">Stable</span>
-                    <span className="text-sm font-semibold text-blue-600">Potato (0.0%)</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Stats</h3>
-                <div className="space-y-3">
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-gray-800">6</div>
-                    <div className="text-sm text-gray-600">Crops Tracked</div>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">₹3,365</div>
-                    <div className="text-sm text-gray-600">Avg. Price</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-        </div>
+          {/* Market Prices Section - Now using dynamic component */}
+          <div className="mt-6">
+            <MarketPrices />
+          </div>
 
         {manualOpen && (
           <div className="manual-form" onClick={() => setManualOpen(false)}>
@@ -797,8 +693,8 @@ const Home = () => {
                 and market insights to maximize agricultural productivity and sustainability.
               </p>
               <div className="flex items-center space-x-4 social-icons">
-                <a href="#" className="text-gray-600 hover:text-blue-600 cursor-pointer transition-all">
-                  <Facebook className="w-5 h-5" />
+                <a href="https://www.instagram.com/krishimitra2000?igsh=MTNkOHY0aWY2d24xNA==" className="text-gray-600 hover:text-blue-600 cursor-pointer transition-all">
+                  <Instagram className="w-5 h-5" />
                 </a>
                 <a href="https://x.com/KrishiMitr84158" target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-blue-400 cursor-pointer transition-all">
                   <Twitter className="w-5 h-5" />

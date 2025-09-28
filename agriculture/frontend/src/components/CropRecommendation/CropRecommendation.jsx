@@ -1,21 +1,27 @@
-import React from 'react';
 import './CropRecommendation.css';
 
 const CropRecommendation = ({ recommendation, onClose }) => {
-  React.useEffect(() => {
-    if (recommendation) {
-      console.log("Received recommendation data in component:", recommendation);
-    }
-  }, [recommendation]);
   if (!recommendation) return null;
 
-  const { crop_recommendation, advice, live_data_used, location_info, yield_quintal_per_acre, market_price_per_quintal_inr, profit_estimate_inr } = recommendation;
+  // Debug logging to understand the data structure
+  console.log('CropRecommendation received:', recommendation);
+  console.log('crop_recommendation type:', typeof recommendation.crop_recommendation);
+  console.log('crop_recommendation value:', recommendation.crop_recommendation);
+
+  const { 
+    crop_recommendation, 
+    advice, 
+    live_data_used, 
+    location_info,
+    yield_quintal_per_acre,
+    market_price_per_quintal_inr,
+    profit_estimate_inr
+  } = recommendation;
 
   return (
     <div className="crop-recommendation-overlay">
       <div className="crop-recommendation-modal">
         <div className="modal-header">
-          <h2>🌾 Crop Recommendation</h2>
           <button className="close-button" onClick={onClose}>×</button>
         </div>
         
@@ -25,9 +31,15 @@ const CropRecommendation = ({ recommendation, onClose }) => {
               <h3 >Top Recommended Crops</h3>
               <div className="crop-list">
                 {/* Map over the array to display each crop */}
-                {crop_recommendation && crop_recommendation.map((crop, index) => (
-                  <div key={index} className="crop-name">{crop}</div>
-                ))}
+                {crop_recommendation && Array.isArray(crop_recommendation) ? (
+                  crop_recommendation.map((crop, index) => (
+                    <div key={index} className="crop-name">{crop}</div>
+                  ))
+                ) : crop_recommendation ? (
+                  <div className="crop-name">{crop_recommendation}</div>
+                ) : (
+                  <div className="crop-name">No recommendations available</div>
+                )}
               </div>
             </div>
             
@@ -73,7 +85,7 @@ const CropRecommendation = ({ recommendation, onClose }) => {
               <div className="environmental-data">
                 <h4>📈 Yield & Market Estimates</h4>
                 <div className="crop-estimates">
-                  {crop_recommendation?.map((crop) => (
+                  {Array.isArray(crop_recommendation) && crop_recommendation.map((crop) => (
                     <div key={crop} className="crop-estimate-card">
                       <div className="crop-name-header">
                         <h5>{crop}</h5>
