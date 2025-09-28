@@ -9,6 +9,9 @@ import { ClerkProvider } from '@clerk/clerk-expo';
 import createTokenCache from '@/utils/tokenCache';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { ConvexProvider, ConvexReactClient } from 'convex/react';
+
+const convex = new ConvexReactClient("https://chatty-perch-912.convex.cloud");
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -46,7 +49,9 @@ export default function RootLayout() {
     <ClerkProvider 
       tokenCache={tokenCache}
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!}>
-      <RootLayoutNav />
+      <ConvexProvider client={convex}>
+        <RootLayoutNav />
+      </ConvexProvider>
     </ClerkProvider>
   );
 }

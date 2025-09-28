@@ -922,7 +922,7 @@ async def recommend_by_location(location: LocationInput):
 
     # 6. Return the final, structured response
     return {
-        'crop_recommendation': final_crop_names,
+        'crop_recommendation': ', '.join(final_crop_names),
         'advice': advice_text,
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': monthly_rainfall},
         'location_info': location_details,
@@ -1024,7 +1024,7 @@ async def recommend_manual(payload: ManualInput):
         profit_estimates[crop] = round(price * yield_estimates[crop], 2) if price is not None else None
 
     return {
-        'crop_recommendation': final_crop_names,
+        'crop_recommendation': ', '.join(final_crop_names),
         'advice': advice_text,
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': payload.rainfall},
         'location_info': {'state': payload.state, 'district': payload.district, 'city': payload.city},
@@ -1434,3 +1434,8 @@ def get_status():
             "/status"
         ]
     }
+
+# Run the server
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
