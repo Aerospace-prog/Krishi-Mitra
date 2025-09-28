@@ -2,3 +2,82 @@ venv/
 __pycache__/
 .DS_Store
 .env
+
+# Large dataset files (don't commit to GitHub)
+dataset/
+*.zip
+*.tar.gz
+# *.h5  # Now tracked with Git LFS
+*.tflite
+# model/disease_detection_model.h5  # Now tracked with Git LFS
+# model/disease_detection_model_metadata.json  # Now tracked with Git LFS
+
+# Training outputs
+training_logs/
+checkpoints/
+*.log
+
+# Temporary files
+temp/
+uploads/
+*.tmp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE files
+vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules (if any)
+node_modules/
+
+# Environments
+venv/
+wsl-tf-env/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets
+.env
+agriculture/frontend/.env
+
+# Data
+data/
+dataset/
+*.zip
+*.tar.gz
+
+
+
+# Training outputs
+training_logs/
+checkpoints/
+*.log
+
+# Temp
+temp/
+uploads/
+*.tmp
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE (fix the dot)
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Frontend
+agriculture/frontend/node_modules/
+agriculture/frontend/dist/

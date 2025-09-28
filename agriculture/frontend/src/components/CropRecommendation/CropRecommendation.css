@@ -216,3 +216,101 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Crop Estimates Styles */
+.crop-estimates {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.crop-estimate-card {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  border: 2px solid #e1e5e9;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.crop-estimate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border-color: #27ae60;
+}
+
+.crop-name-header {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.crop-name-header h5 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #2c3e50;
+  text-transform: capitalize;
+  background: linear-gradient(135deg, #27ae60, #2ecc71);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.estimate-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.estimate-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.estimate-label {
+  font-weight: 500;
+  color: #7f8c8d;
+  font-size: 14px;
+  flex: 1;
+}
+
+.estimate-value {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 14px;
+  text-align: right;
+}
+
+.estimate-value.profit {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+/* Mobile responsiveness for crop estimates */
+@media (max-width: 768px) {
+  .crop-estimates {
+    gap: 12px;
+  }
+  
+  .crop-estimate-card {
+    padding: 12px;
+  }
+  
+  .crop-name-header h5 {
+    font-size: 16px;
+  }
+  
+  .estimate-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .estimate-value {
+    text-align: left;
+  }
+}

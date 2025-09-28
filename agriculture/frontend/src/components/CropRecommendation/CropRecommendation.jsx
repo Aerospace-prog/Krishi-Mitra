@@ -2,9 +2,14 @@ import React from 'react';
 import './CropRecommendation.css';
 
 const CropRecommendation = ({ recommendation, onClose }) => {
+  React.useEffect(() => {
+    if (recommendation) {
+      console.log("Received recommendation data in component:", recommendation);
+    }
+  }, [recommendation]);
   if (!recommendation) return null;
 
-  const { crop_recommendation, advice, live_data_used, location_info } = recommendation;
+  const { crop_recommendation, advice, live_data_used, location_info, yield_quintal_per_acre, market_price_per_quintal_inr, profit_estimate_inr } = recommendation;
 
   return (
     <div className="crop-recommendation-overlay">
@@ -17,8 +22,13 @@ const CropRecommendation = ({ recommendation, onClose }) => {
         <div className="modal-content">
           <div className="recommendation-section">
             <div className="recommended-crop">
-              <h3>Recommended Crop</h3>
-              <div className="crop-name">{crop_recommendation}</div>
+              <h3 >Top Recommended Crops</h3>
+              <div className="crop-list">
+                {/* Map over the array to display each crop */}
+                {crop_recommendation && crop_recommendation.map((crop, index) => (
+                  <div key={index} className="crop-name">{crop}</div>
+                ))}
+              </div>
             </div>
             
             <div className="ai-advice">
@@ -30,7 +40,7 @@ const CropRecommendation = ({ recommendation, onClose }) => {
           <div className="data-section">
             <div className="location-info">
               <h4>📍 Location</h4>
-              <p>{location_info?.state || 'Unknown'}</p>
+              <p>{[location_info?.city, location_info?.district, location_info?.state].filter(Boolean).join(', ') || 'Unknown'}</p>
             </div>
 
             <div className="environmental-data">
@@ -58,6 +68,41 @@ const CropRecommendation = ({ recommendation, onClose }) => {
                 </div>
               </div>
             </div>
+
+            {(yield_quintal_per_acre || market_price_per_quintal_inr || profit_estimate_inr) && (
+              <div className="environmental-data">
+                <h4>📈 Yield & Market Estimates</h4>
+                <div className="crop-estimates">
+                  {crop_recommendation?.map((crop) => (
+                    <div key={crop} className="crop-estimate-card">
+                      <div className="crop-name-header">
+                        <h5>{crop}</h5>
+                      </div>
+                      <div className="estimate-details">
+                        {yield_quintal_per_acre?.[crop] != null && (
+                          <div className="estimate-item">
+                            <span className="estimate-label">🌾 Predicted Yield:</span>
+                            <span className="estimate-value">{yield_quintal_per_acre[crop]} quintals/acre</span>
+                          </div>
+                        )}
+                        {market_price_per_quintal_inr?.[crop] != null && (
+                          <div className="estimate-item">
+                            <span className="estimate-label">💰 Market Price:</span>
+                            <span className="estimate-value">₹{market_price_per_quintal_inr[crop]}/quintal</span>
+                          </div>
+                        )}
+                        {profit_estimate_inr?.[crop] != null && (
+                          <div className="estimate-item">
+                            <span className="estimate-label">📊 Estimated Profit:</span>
+                            <span className="estimate-value profit">₹{profit_estimate_inr[crop]}/acre</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
