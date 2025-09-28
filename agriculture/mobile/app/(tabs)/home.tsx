@@ -532,7 +532,7 @@ export default function HomeScreen() {
         if (baseUrl.includes('127.0.0.1')) baseUrl = baseUrl.replace('127.0.0.1', '10.0.2.2');
         if (baseUrl.includes('localhost')) baseUrl = baseUrl.replace('localhost', '10.0.2.2');
       }
-      const res = await fetch(`${baseUrl}/v1/recommendations/location`, {
+      const res = await fetch(`${baseUrl}/recommend-by-location`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ latitude, longitude })
@@ -809,7 +809,27 @@ export default function HomeScreen() {
                   <Ionicons name="leaf" size={20} color="#4CAF50" />
                   <Text style={styles.recommendationLabel}>Recommended Crop</Text>
                 </View>
-                <Text style={styles.recommendationValue}>{recommendation.crop_recommendation}</Text>
+                <View style={styles.cropsContainer}>
+                  {(() => {
+                    const crops = recommendation.crop_recommendation;
+                    if (!crops) {
+                      return (
+                        <View style={styles.cropItem}>
+                          <Text style={styles.recommendationValue}>No recommendations available</Text>
+                        </View>
+                      );
+                    }
+                    
+                    // Handle both string and array formats
+                    const cropList = Array.isArray(crops) ? crops : crops.split(',');
+                    
+                    return cropList.map((crop, index) => (
+                      <View key={index} style={styles.cropItem}>
+                        <Text style={styles.recommendationValue}>{String(crop).trim()}</Text>
+                      </View>
+                    ));
+                  })()}
+                </View>
               </View>
             </View>
             
@@ -1339,7 +1359,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginTop: 4,
+  },
+  cropsContainer: {
+    gap: 16,
+    marginTop: 8,
+    backgroundColor: '#4a5568'
+  },
+  cropItem: {
+    backgroundColor: '#2d3748',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+    marginBottom: 8,
   },
   recommendationAdvice: {
     fontSize: 15,
@@ -1923,6 +1956,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#ffffff',
     fontWeight: 'bold',
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#2d3748',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  historyCropsContainer: {
+    gap: 8,
+    marginTop: 8,
   },
   historyAdviceContainer: {
     backgroundColor: '#4a5568',

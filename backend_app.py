@@ -54,7 +54,6 @@ app.add_middleware(
     allow_origin_regex=r"^https?://((.*\\.expo\\.dev)|(.*\\.ngrok\\.io)|(localhost|127\\.0\\.0\\.1)(:\\d+)?|((?:192\\.168|10\\.0|172\\.(?:1[6-9]|2[0-9]|3[01]))\\.(?:\\d{1,3}\\.){1}\\d{1,3})(:\\d+)?)$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -144,7 +143,15 @@ except Exception as e:
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 WEATHERAPI_KEY = os.getenv("WEATHERAPI_KEY")
-TESTING_MODE = os.getenv("TESTING_MODE")
+TESTING_MODE = os.getenv("TESTING_MODE", "false").lower() == "true"
+
+# Auto-enable testing mode if Gemini API key is not available
+if not GEMINI_API_KEY:
+    print("⚠️  Gemini API key not found. Enabling testing mode with enhanced fallback responses.")
+    TESTING_MODE = True
+else:
+    print(f"✅ Gemini API key found. Disabling testing mode to use AI responses.")
+    TESTING_MODE = False
 
 if not WEATHERAPI_KEY:
     raise ValueError("WeatherAPI key is missing. Please set WEATHERAPI_KEY in your .env file.")
@@ -915,7 +922,7 @@ async def recommend_by_location(location: LocationInput):
 
     # 6. Return the final, structured response
     return {
-        'crop_recommendation': final_crop_names,
+        'crop_recommendation': ', '.join(final_crop_names),
         'advice': advice_text,
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': monthly_rainfall},
         'location_info': location_details,
@@ -1017,7 +1024,7 @@ async def recommend_manual(payload: ManualInput):
         profit_estimates[crop] = round(price * yield_estimates[crop], 2) if price is not None else None
 
     return {
-        'crop_recommendation': final_crop_names,
+        'crop_recommendation': ', '.join(final_crop_names),
         'advice': advice_text,
         'live_data_used': {**weather_data, **soil_data, 'rainfall_mm_monthly_avg': payload.rainfall},
         'location_info': {'state': payload.state, 'district': payload.district, 'city': payload.city},
@@ -1081,62 +1088,7 @@ async def get_yield_model_info():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get model info: {str(e)}")
 
-# --- Crop history with MongoDB (pymongo) ---
-try:
-    from pymongo import MongoClient
-    from bson import ObjectId
-    from datetime import datetime as dt
-
-    MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-    MONGODB_DB = os.getenv("MONGODB_DB", "krishi_mitra")
-    MONGODB_COLLECTION = os.getenv("MONGODB_COLLECTION", "crop_history")
-
-    _mongo_client = MongoClient(MONGODB_URI)
-    _db = _mongo_client[MONGODB_DB]
-    _crop_history = _db[MONGODB_COLLECTION]
-
-    class CropHistoryInput(BaseModel):
-        farm_id: str
-        crop: str
-        season: str | None = None
-        yield_quintal_per_acre: float | None = None
-        state: str | None = None
-        district: str | None = None
-        city: str | None = None
-
-    @app.post("/crop-history")
-    def add_crop_history(entry: CropHistoryInput):
-        doc = {
-            "farm_id": entry.farm_id,
-            "crop": entry.crop,
-            "season": entry.season or "unknown",
-            "yield_quintal_per_acre": float(entry.yield_quintal_per_acre or 0.0),
-            "state": entry.state or "",
-            "district": entry.district or "",
-            "city": entry.city or "",
-            "created_at": dt.utcnow(),
-        }
-        res = _crop_history.insert_one(doc)
-        return {"status": "ok", "id": str(res.inserted_id)}
-
-    @app.get("/crop-history")
-    def list_crop_history(farm_id: str):
-        rows = list(_crop_history.find({"farm_id": farm_id}).sort("created_at", -1))
-        def to_api(r):
-            return {
-                "id": str(r.get("_id")),
-                "farm_id": r.get("farm_id"),
-                "state": r.get("state"),
-                "district": r.get("district"),
-                "city": r.get("city"),
-                "crop": r.get("crop"),
-                "season": r.get("season"),
-                "yield_quintal_per_acre": r.get("yield_quintal_per_acre"),
-                "created_at": r.get("created_at").isoformat() if r.get("created_at") else None,
-            }
-        return [to_api(r) for r in rows]
-except Exception as e:
-    print(f"MongoDB not available or failed to initialize: {e}")
+# Crop history functionality removed as requested
 
 # --- Disease Detection Endpoints ---
 
@@ -1346,6 +1298,117 @@ async def get_disease_model_info():
 def read_root():
     return {"message": "Welcome to the Krishi Mitra AI API (Live & Regional)"}
 
+# --- Chatbot Endpoint ---
+class ChatbotRequest(BaseModel):
+    message: str
+    language: str = "en"
+
+@app.post("/chatbot")
+async def chatbot(request: ChatbotRequest):
+    """
+    AI-powered multilingual chatbot for farmer queries.
+    
+    Args:
+        request: Chatbot request with message and language
+        
+    Returns:
+        AI response in the requested language
+    """
+    # Enhanced fallback responses with basic agricultural advice
+    fallback_responses = {
+        "en": {
+            "tomato": "To grow tomatoes: Plant in well-drained soil, provide 6-8 hours of sunlight, water regularly but avoid overwatering, use organic compost, and support with stakes. Harvest when fruits are firm and fully colored.",
+            "banana": "To grow bananas: Plant in well-drained, fertile soil with good organic matter. Space plants 2-3 meters apart. Water regularly but avoid waterlogging. Apply NPK fertilizer (12:12:17) every 2-3 months. Remove suckers to maintain single stem. Harvest when fingers are plump and green. Protect from strong winds with support.",
+            "fertilizer": "For most crops, use NPK fertilizer (Nitrogen, Phosphorus, Potassium). Apply organic compost, cow dung, or vermicompost. Test your soil first to determine specific nutrient needs.",
+            "pest": "For pest control: Use neem oil spray, practice crop rotation, remove infected plants, maintain proper spacing, and encourage beneficial insects like ladybugs.",
+            "weather": "Check local weather forecasts regularly. Protect crops from extreme weather with covers, proper irrigation, and timely harvesting.",
+            "default": "I'm Krishi Mitra, your farming assistant! I can ONLY help with farming topics like crop growing, soil management, pest control, weather advice, livestock, fertilizers, and agricultural practices. Please ask me questions related to farming only."
+        },
+        "hi": {
+            "tomato": "टमाटर उगाने के लिए: अच्छी जल निकासी वाली मिट्टी में लगाएं, 6-8 घंटे धूप दें, नियमित पानी दें लेकिन अधिक पानी न दें, जैविक खाद का उपयोग करें, और सहारे के लिए खूंटे लगाएं।",
+            "banana": "केले उगाने के लिए: अच्छी जल निकासी वाली उपजाऊ मिट्टी में लगाएं। पौधों के बीच 2-3 मीटर की दूरी रखें। नियमित पानी दें लेकिन जलभराव से बचें। NPK उर्वरक (12:12:17) हर 2-3 महीने में डालें। एक तने को बनाए रखने के लिए सकर्स हटाएं।",
+            "fertilizer": "अधिकांश फसलों के लिए NPK उर्वरक (नाइट्रोजन, फॉस्फोरस, पोटेशियम) का उपयोग करें। जैविक खाद, गोबर, या केंचुआ खाद का प्रयोग करें।",
+            "pest": "कीट नियंत्रण के लिए: नीम तेल का छिड़काव करें, फसल चक्र अपनाएं, रोगग्रस्त पौधे हटाएं, उचित दूरी बनाए रखें।",
+            "default": "मैं कृषि मित्र हूं, आपका कृषि सहायक! मैं केवल खेती से संबंधित विषयों जैसे फसल उगाना, मिट्टी प्रबंधन, कीट नियंत्रण, मौसम सलाह, पशुधन, उर्वरक और कृषि पद्धतियों में मदद कर सकता हूं। कृपया केवल खेती से संबंधित प्रश्न पूछें।"
+        },
+        "te": {
+            "tomato": "టమాటలు పండించడానికి: మంచి నీటి వ్యవస్థ ఉన్న న chలో నాటండి, 6-8 గంటల సూర్యకాంతి ఇవ్వండి, క్రమం తప్పకుండా నీరు పెట్టండి కానీ అధిక నీరు పెట్టకండి, సేంద్రీయ ఎరువులు వాడండి।",
+            "banana": "అరటి పండించడానికి: మంచి నీటి వ్యవస్థ ఉన్న సారవంతమైన న chలో నాటండి। మొక్కల మధ్య 2-3 మీటర్ల దూరం ఉంచండి। క్రమం తప్పకుండా నీరు పెట్టండి కానీ నీటి నిల్వలను నివారించండి। NPK ఎరువులు (12:12:17) ప్రతి 2-3 నెలలకు వాడండి।",
+            "fertilizer": "చాలా పంటలకు NPK ఎరువులు (నత్రజని, భాస్వరం, పొటాషియం) వాడండి। సేంద్రీయ ఎరువులు, ఆవు పేడ, లేదా వర్మీకంపోస్ట్ వాడండి।",
+            "pest": "కీటక నియంత్రణకు: వేప నూనె స్ప్రే వాడండి, పంట మార్పిడి చేయండి, వ్యాధిగ్రస్త మొక్కలు తొలగించండి।",
+            "default": "నేను కృషి మిత్రుడిని, మీ వ్యవసాయ సహాయకుడిని! పంటలు పండించడం, న ch నిర్వహణ, కీటక నియంత్రణలో సహాయపడగలను।"
+        }
+    }
+    
+    if not gemini_model:
+        # Use enhanced fallback responses
+        message_lower = request.message.lower()
+        language_responses = fallback_responses.get(request.language, fallback_responses["en"])
+        
+        # Simple keyword matching for basic responses
+        if any(word in message_lower for word in ["tomato", "टमाटर", "టమాట"]):
+            response = language_responses.get("tomato", language_responses["default"])
+        elif any(word in message_lower for word in ["banana", "केला", "అరటి", "grow banana", "banana growing"]):
+            response = language_responses.get("banana", language_responses["default"])
+        elif any(word in message_lower for word in ["fertilizer", "खाद", "ఎరువు", "pest", "कीट", "కీటక"]):
+            response = language_responses.get("fertilizer" if "fertilizer" in message_lower or "खाद" in message_lower or "ఎరువు" in message_lower else "pest", language_responses["default"])
+        elif any(word in message_lower for word in ["weather", "मौसम", "వాతావరణం"]):
+            response = language_responses.get("weather", language_responses["default"])
+        else:
+            response = language_responses["default"]
+        
+        return {
+            "response": response,
+            "language": request.language,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    
+    try:
+        # Create a context-aware prompt based on the language
+        language_contexts = {
+            "en": "You are Krishi Mitra, an expert AI agricultural assistant helping farmers in India. Provide helpful, accurate, and practical advice about farming, crops, weather, soil, pests, diseases, and agricultural practices. Keep responses concise and actionable.",
+            "hi": "आप कृषि मित्र हैं, भारत में किसानों की मदद करने वाले एक विशेषज्ञ AI कृषि सहायक। खेती, फसलों, मौसम, मिट्टी, कीटों, रोगों और कृषि पद्धतियों के बारे में सहायक, सटीक और व्यावहारिक सलाह दें। उत्तर संक्षिप्त और क्रियाशील रखें।",
+            "te": "మీరు కృషి మిత్రుడు, భారతదేశంలో రైతులకు సహాయపడే నిపుణ AI వ్యవసాయ సహాయకుడు. వ్యవసాయం, పంటలు, వాతావరణం, న ch, కీటకాలు, వ్యాధులు మరియు వ్యవసాయ పద్ధతుల గురించి సహాయకరమైన, ఖచ్చితమైన మరియు ఆచరణాత్మక సలహాలను అందించండి. సమాధానాలను సంక్షిప్తంగా మరియు చర్యాత్మకంగా ఉంచండి.",
+            "ta": "நீங்கள் கிருஷி மித்ரா, இந்தியாவில் விவசாயிகளுக்கு உதவும் நிபுணர் AI விவசாய உதவியாளர். விவசாயம், பயிர்கள், வானிலை, மண், பூச்சிகள், நோய்கள் மற்றும் விவசாய நடைமுறைகள் பற்றி உதவியான, துல்லியமான மற்றும் நடைமுறைக்குரிய ஆலோசனைகளை வழங்குங்கள். பதில்களை சுருக்கமாகவும் செயல்பாட்டிற்குரியதாகவும் வைத்திருங்கள்.",
+            "bn": "আপনি কৃষি মিত্র, ভারতের কৃষকদের সাহায্যকারী একজন বিশেষজ্ঞ AI কৃষি সহায়ক। চাষাবাদ, ফসল, আবহাওয়া, মাটি, পোকামাকড়, রোগ এবং কৃষি পদ্ধতি সম্পর্কে সহায়ক, সঠিক এবং ব্যবহারিক পরামর্শ দিন। উত্তরগুলি সংক্ষিপ্ত এবং কার্যকর রাখুন।",
+            "mr": "तुम्ही कृषी मित्र आहात, भारतातील शेतकऱ्यांना मदत करणारे तज्ञ AI कृषी सहायक. शेती, पिके, हवामान, माती, कीटक, रोग आणि कृषी पद्धतींबद्दल मदतकारक, अचूक आणि व्यावहारिक सल्ले द्या. उत्तरे संक्षिप्त आणि कृतीयोग्य ठेवा.",
+            "gu": "તમે કૃષિ મિત્ર છો, ભારતમાં ખેડૂતોની મદદ કરતા નિપુણ AI કૃષિ સહાયક. ખેતી, પાક, હવામાન, માટી, જંતુઓ, રોગો અને કૃષિ પદ્ધતિઓ વિશે મદદકારક, સચોટ અને વ્યવહારિક સલાહ આપો. જવાબો સંક્ષિપ્ત અને ક્રિયાશીલ રાખો.",
+            "kn": "ನೀವು ಕೃಷಿ ಮಿತ್ರ, ಭಾರತದ ರೈತರಿಗೆ ಸಹಾಯ ಮಾಡುವ ತಜ್ಞ AI ಕೃಷಿ ಸಹಾಯಕ. ಕೃಷಿ, ಬೆಳೆಗಳು, ಹವಾಮಾನ, ಮಣ್ಣು, ಕೀಟಗಳು, ರೋಗಗಳು ಮತ್ತು ಕೃಷಿ ಪದ್ಧತಿಗಳ ಬಗ್ಗೆ ಸಹಾಯಕ, ನಿಖರ ಮತ್ತು ಪ್ರಾಯೋಗಿಕ ಸಲಹೆಗಳನ್ನು ನೀಡಿ. ಉತ್ತರಗಳನ್ನು ಸಂಕ್ಷಿಪ್ತ ಮತ್ತು ಕ್ರಿಯಾಶೀಲವಾಗಿ ಇರಿಸಿ.",
+            "ml": "നിങ്ങൾ കൃഷി മിത്രൻ, ഇന്ത്യയിലെ കർഷകരെ സഹായിക്കുന്ന വിദഗ്ധ AI കാർഷിക സഹായി. കാർഷികം, വിളകൾ, കാലാവസ്ഥ, മണ്ണ്, കീടങ്ങൾ, രോഗങ്ങൾ, കാർഷിക രീതികൾ എന്നിവയെക്കുറിച്ച് സഹായകരവും കൃത്യവും പ്രായോഗികവുമായ ഉപദേശങ്ങൾ നൽകുക. ഉത്തരങ്ങൾ ചുരുക്കവും പ്രവർത്തനക്ഷമവുമായി സൂക്ഷിക്കുക.",
+            "pa": "ਤੁਸੀਂ ਕ੍ਰਿਸ਼ੀ ਮਿਤਰ ਹੋ, ਭਾਰਤ ਵਿੱਚ ਕਿਸਾਨਾਂ ਦੀ ਮਦਦ ਕਰਨ ਵਾਲੇ ਮਾਹਿਰ AI ਖੇਤੀ ਸਹਾਇਕ। ਖੇਤੀ, ਫਸਲਾਂ, ਮੌਸਮ, ਮਿੱਟੀ, ਕੀਟ, ਰੋਗ ਅਤੇ ਖੇਤੀ ਪ੍ਰਣਾਲੀਆਂ ਬਾਰੇ ਮਦਦਗਾਰ, ਸਹੀ ਅਤੇ ਵਿਹਾਰਕ ਸਲਾਹ ਦਿਓ। ਜਵਾਬ ਸੰਖੇਪ ਅਤੇ ਕਾਰਵਾਈ ਯੋਗ ਰੱਖੋ।"
+        }
+        
+        context = language_contexts.get(request.language, language_contexts["en"])
+        prompt = f"{context}\n\nIMPORTANT: You must ONLY answer questions related to farming, agriculture, crops, livestock, soil, weather, pests, diseases, fertilizers, irrigation, and agricultural topics. If the question is not about farming/agriculture, politely decline and ask for a farming-related question.\n\nFarmer's question: {request.message}\n\nPlease respond in {request.language} language."
+        
+        response = gemini_model.generate_content(prompt)
+        
+        return {
+            "response": response.text,
+            "language": request.language,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+        
+    except Exception as e:
+        print(f"Chatbot error: {str(e)}")
+        error_responses = {
+            "en": "I apologize, but I'm having trouble processing your request right now. Please try again in a moment.",
+            "hi": "मैं क्षमा चाहता हूं, लेकिन मुझे आपके अनुरोध को संसाधित करने में कठिनाई हो रही है। कृपया कुछ समय बाद पुनः प्रयास करें।",
+            "te": "నేను క్షమించండి, కానీ నేను ప్రస్తుతం మీ అభ్యర్థనను ప్రాసెస్ చేయడంలో ఇబ్బంది పడుతున్నాను. దయచేసి కొంత సమయం తర్వాత మళ్లీ ప్రయత్నించండి।",
+            "ta": "நான் மன்னிக்கிறேன், ஆனால் இப்போது உங்கள் கோரிக்கையை செயலாக்குவதில் சிக்கல் உள்ளது. தயவுசெய்து சிறிது நேரம் கழித்து மீண்டும் முயற்சிக்கவும்।",
+            "bn": "আমি দুঃখিত, কিন্তু এখনই আপনার অনুরোধ প্রক্রিয়াকরণে সমস্যা হচ্ছে। অনুগ্রহ করে কিছুক্ষণ পরে আবার চেষ্টা করুন।",
+            "mr": "माफ करा, पण आत्ता मी तुमच्या विनंतीची प्रक्रिया करताना अडचणीत आहे. कृपया थोड्या वेळाने पुन्हा प्रयत्न करा.",
+            "gu": "હું માફી માંગું છું, પરંતુ હાલમાં તમારી વિનંતીને પ્રક્રિયા કરવામાં મુશ્કેલી આવી રહી છે. કૃપા કરીને થોડી વાર પછી ફરીથી પ્રયાસ કરો.",
+            "kn": "ನಾನು ಕ್ಷಮಿಸಿ, ಆದರೆ ನಾನು ಇದೀಗ ನಿಮ್ಮ ವಿನಂತಿಯನ್ನು ಸಂಸ್ಕರಿಸುವಲ್ಲಿ ತೊಂದರೆ ಪಡುತ್ತಿದ್ದೇನೆ. ದಯವಿಟ್ಟು ಸ್ವಲ್ಪ ಸಮಯದ ನಂತರ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.",
+            "ml": "ഞാൻ ക്ഷമിക്കുന്നു, പക്ഷേ ഇപ്പോൾ നിങ്ങളുടെ അഭ്യർത്ഥന പ്രോസസ്സ് ചെയ്യുന്നതിൽ ബുദ്ധിമുട്ട് നേരിടുന്നു. ദയവായി കുറച്ച് സമയത്തിന് ശേഷം വീണ്ടും ശ്രമിക്കുക.",
+            "pa": "ਮੈਂ ਮਾਫੀ ਮੰਗਦਾ ਹਾਂ, ਪਰ ਮੈਨੂੰ ਹੁਣ ਤੁਹਾਡੀ ਬੇਨਤੀ ਨੂੰ ਸੰਭਾਲਣ ਵਿੱਚ ਮੁਸ਼ਕਲ ਆ ਰਹੀ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਥੋੜ੍ਹੀ ਦੇਰ ਬਾਅਦ ਫਿਰ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
+        }
+        return {
+            "response": error_responses.get(request.language, error_responses["en"]),
+            "language": request.language,
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
 @app.get("/status")
 def get_status():
     """Get API status and configuration info"""
@@ -1366,7 +1429,13 @@ def get_status():
             "/detect-disease",
             "/detect-disease-with-ai-advice",
             "/disease-model-info",
+            "/chatbot",
             "/debug/agmarknet",
             "/status"
         ]
     }
+
+# Run the server
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

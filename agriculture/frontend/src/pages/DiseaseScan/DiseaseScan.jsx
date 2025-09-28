@@ -73,39 +73,55 @@ const DiseaseScan = () => {
     setIsAnalyzing(true);
     try {
       const formData = new FormData();
-      formData.append('image', selectedFile);
+      formData.append('file', selectedFile);
 
-      const response = await fetch(`${API_BASE_URL}/analyze-disease`, {
+      const response = await fetch(`${API_BASE_URL}/detect-disease-with-ai-advice`, {
         method: 'POST',
         body: formData,
       });
 
       if (response.ok) {
         const result = await response.json();
-        setAnalysisResult(result);
+        // Transform the API response to match the expected format
+        if (result.success && result.primary_prediction) {
+          setAnalysisResult({
+            disease: result.primary_prediction.disease,
+            confidence: Math.round(result.primary_prediction.confidence * 100),
+            severity: result.primary_prediction.severity,
+            description: result.primary_prediction.description,
+            recommendations: result.treatment_recommendations?.treatments?.fungicides || [
+              'Apply appropriate treatment based on disease type',
+              'Monitor crop regularly for disease progression',
+              'Consult with agricultural expert if needed'
+            ],
+            prevention: result.treatment_recommendations?.treatments?.prevention || [
+              'Maintain proper crop hygiene',
+              'Use disease-resistant varieties',
+              'Follow proper irrigation practices',
+              'Implement crop rotation'
+            ],
+            ai_advice: result.ai_advice,
+            full_result: result // Store full result for additional data
+          });
+        } else {
+          throw new Error(result.error || 'Analysis failed');
+        }
       } else {
-        throw new Error('Analysis failed');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || 'Analysis failed');
       }
     } catch (error) {
       console.error('Error analyzing image:', error);
-      // Mock result for demonstration
+      // Show error to user instead of mock data
       setAnalysisResult({
-        disease: 'Leaf Blight',
-        confidence: 87,
-        severity: 'Moderate',
-        description: 'This appears to be a case of leaf blight, a common fungal disease affecting crop leaves.',
-        recommendations: [
-          'Apply fungicide treatment immediately',
-          'Remove affected leaves to prevent spread',
-          'Improve air circulation around plants',
-          'Avoid overhead watering'
-        ],
-        prevention: [
-          'Plant disease-resistant varieties',
-          'Maintain proper spacing between plants',
-          'Use clean, sterilized tools',
-          'Rotate crops regularly'
-        ]
+        error: true,
+        message: error.message || 'Failed to analyze image. Please try again.',
+        disease: 'Analysis Failed',
+        confidence: 0,
+        severity: 'Unknown',
+        description: 'Unable to analyze the image. Please check your connection and try again.',
+        recommendations: ['Please try uploading the image again'],
+        prevention: ['Ensure good image quality for better analysis']
       });
     } finally {
       setIsAnalyzing(false);
@@ -258,6 +274,15 @@ const DiseaseScan = () => {
                     ))}
                   </ul>
                 </div>
+
+                {analysisResult.ai_advice && (
+                  <div className="ai-advice">
+                    <h4>AI Expert Advice</h4>
+                    <div className="ai-advice-content">
+                      <p>{analysisResult.ai_advice}</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="result-actions">
                   <button className="download-btn">

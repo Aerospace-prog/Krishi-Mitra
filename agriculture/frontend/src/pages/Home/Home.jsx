@@ -3,10 +3,10 @@ import './Home.css';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
 import CropRecommendation from '../../components/CropRecommendation/CropRecommendation';
-import YieldPrediction from '../../components/YieldPrediction/YieldPrediction';
 import DiseaseDetection from '../../components/DiseaseDetection/DiseaseDetection';
 import LoadingModal from '../../components/LoadingModal/LoadingModal';
 import ErrorModal from '../../components/ErrorModal/ErrorModal';
+import Chatbot from '../../components/Chatbot/Chatbot';
 import { Search, Bell, ChevronUp, ChevronDown, BarChart3, Scan, Droplets, Wind, AlertTriangle, TrendingUp, MessageSquare, Facebook, Twitter, Linkedin, Youtube, Mail, Phone, MapPin } from 'lucide-react';
 
 const Home = () => {
@@ -16,12 +16,11 @@ const Home = () => {
   const [recommendation, setRecommendation] = useState(null);
   const [error, setError] = useState(null);
   const [showError, setShowError] = useState(false);
-<<<<<<< HEAD
   const [manualOpen, setManualOpen] = useState(false);
-  const [yieldPredictionOpen, setYieldPredictionOpen] = useState(false);
   const [diseaseDetectionOpen, setDiseaseDetectionOpen] = useState(false);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
+  const [chatbotMinimized, setChatbotMinimized] = useState(false);
   const [manual, setManual] = useState({ N: '', temperature: '', humidity: '', ph: '', rainfall: '', state: '' });
-=======
   const [cropHistory, setCropHistory] = useState([]);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -33,12 +32,11 @@ const Home = () => {
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
->>>>>>> b61be6894a0effe80b2b790f5a216650f21f3bec
 
   // Backend API URL from Vite env or fallback to localhost
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
   
-  // Weather API key (you can get this from OpenWeatherMap)
+  // Weather API key (you can get this from WeatherAPI.com)
   const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY || 'your_weather_api_key_here';
 
   // Helper function to get current season
@@ -150,36 +148,68 @@ const Home = () => {
     }
   };
 
-  // Fetch weather data from backend API
+  // Fetch weather data directly from WeatherAPI
   const fetchWeatherData = async (lat, lon) => {
     setWeatherLoading(true);
     setWeatherError(null);
     
+    // Check if API key is set
+    if (WEATHER_API_KEY === 'your_weather_api_key_here') {
+      console.warn('Weather API key not set. Using fallback data.');
+      setWeatherError('Weather API key not configured');
+      setWeatherData();
+      setWeatherLoading(false);
+      return;
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/weather`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          latitude: lat,
-          longitude: lon
-        })
-      });
+      console.log('Fetching weather for:', lat, lon);
+      // Use WeatherAPI directly with the API key
+      const response = await fetch(`http://api.weatherapi.com/v1/forecast.json?key=${WEATHER_API_KEY}&q=${lat},${lon}&days=7&aqi=no&alerts=no`);
       
       if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setWeatherData(result.data);
-          setWeatherError(null);
-        } else {
-          throw new Error('Weather API returned unsuccessful response');
-        }
+        const data = await response.json();
+        
+        // Transform the API response to match our expected format
+        const weatherData = {
+          current: {
+            temp_c: data.current.temp_c,
+            temp_f: data.current.temp_f,
+            humidity: data.current.humidity,
+            condition: data.current.condition.text,
+            condition_icon: data.current.condition.icon,
+            wind_kph: data.current.wind_kph,
+            wind_mph: data.current.wind_mph,
+            pressure_mb: data.current.pressure_mb,
+            feelslike_c: data.current.feelslike_c,
+            uv: data.current.uv,
+            visibility_km: data.current.vis_km
+          },
+          location: {
+            name: data.location.name,
+            region: data.location.region,
+            country: data.location.country,
+            lat: data.location.lat,
+            lon: data.location.lon
+          },
+          forecast: data.forecast.forecastday.map(day => ({
+            date: day.date,
+            day: {
+              maxtemp_c: day.day.maxtemp_c,
+              mintemp_c: day.day.mintemp_c,
+              condition: day.day.condition.text,
+              condition_icon: day.day.condition.icon
+            }
+          }))
+        };
+        
+        setWeatherData(weatherData);
+        setWeatherError(null);
       } else {
         throw new Error(`Weather API error: ${response.status}`);
       }
     } catch (err) {
-      console.error('Error fetching weather from backend:', err);
+      console.error('Error fetching weather from WeatherAPI:', err);
       setWeatherError(err.message);
       // Fallback to static data
       setWeatherData({
@@ -561,34 +591,6 @@ const Home = () => {
                   onClick={isOnline ? handleAnalyzeFarm : handleOfflineAnalysis}
             disabled={isLoading}
           >
-<<<<<<< HEAD
-            {isLoading ? 'Analyzing...' : 'Analyse My Farm'}
-          </button>
-          <button 
-            className="cta"
-            onClick={() => setManualOpen(true)}
-            disabled={isLoading}
-            style={{ marginLeft: '12px' }}
-          >
-            Enter Data Manually
-          </button>
-          <button 
-            className="cta"
-            onClick={() => setYieldPredictionOpen(true)}
-            disabled={isLoading}
-            style={{ marginLeft: '12px' }}
-          >
-            Predict Yield
-          </button>
-          <button 
-            className="cta"
-            onClick={() => setDiseaseDetectionOpen(true)}
-            disabled={isLoading}
-            style={{ marginLeft: '12px' }}
-          >
-            Detect Disease
-          </button>
-=======
                   <BarChart3 className="w-5 h-5" />
                   <span>
                     {isLoading ? 'Analyzing...' : 
@@ -597,10 +599,17 @@ const Home = () => {
                 </button>
                 <button 
                   onClick={() => navigate('/disease-scan')}
-                  className="w-full bg-green-600 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-green-700 hover:cursor-pointer transition-all hover:scale-105"
+                  className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-purple-700 hover:cursor-pointer transition-all hover:scale-105"
                 >
                   <Scan className="w-5 h-5" />
                   <span>Scan for Disease</span>
+                </button>
+                <button 
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:bg-blue-700 hover:cursor-pointer transition-all hover:scale-105"
+                  onClick={() => setManualOpen(true)}
+                  disabled={isLoading}
+                >
+                  <span>Enter Data Manually</span>
                 </button>
               </div>
             </div>
@@ -719,40 +728,54 @@ const Home = () => {
                 </div>
               </div>
             </div>
->>>>>>> b61be6894a0effe80b2b790f5a216650f21f3bec
         </div>
 
         {manualOpen && (
-          <form className="manual-form" onSubmit={submitManual}>
-            <div className="row">
-              <label>N (kg/ha)</label>
-              <input required type="number" step="0.1" value={manual.N} onChange={e => setManual({ ...manual, N: e.target.value })} />
+          <div className="manual-form" onClick={() => setManualOpen(false)}>
+            <div onClick={(e) => e.stopPropagation()}>
+              <button 
+                className="close-btn" 
+                onClick={() => setManualOpen(false)}
+              >
+                ×
+              </button>
+              <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: '700', color: '#111827' }}>
+                Enter Farm Data Manually
+              </h2>
+              <form onSubmit={submitManual}>
+                <div className="row">
+                  <label>N (kg/ha)</label>
+                  <input required type="number" step="0.1" value={manual.N} onChange={e => setManual({ ...manual, N: e.target.value })} />
+                </div>
+                <div className="row">
+                  <label>Temperature (°C)</label>
+                  <input required type="number" step="0.1" value={manual.temperature} onChange={e => setManual({ ...manual, temperature: e.target.value })} />
+                </div>
+                <div className="row">
+                  <label>Humidity (%)</label>
+                  <input required type="number" step="0.1" value={manual.humidity} onChange={e => setManual({ ...manual, humidity: e.target.value })} />
+                </div>
+                <div className="row">
+                  <label>pH</label>
+                  <input required type="number" step="0.1" value={manual.ph} onChange={e => setManual({ ...manual, ph: e.target.value })} />
+                </div>
+                <div className="row">
+                  <label>Rainfall (mm/month)</label>
+                  <input required type="number" step="0.1" value={manual.rainfall} onChange={e => setManual({ ...manual, rainfall: e.target.value })} />
+                </div>
+                <div className="row">
+                  <label>State (optional)</label>
+                  <input type="text" value={manual.state} onChange={e => setManual({ ...manual, state: e.target.value })} />
+                </div>
+                <div className="actions">
+                  <button type="button" className="cta" onClick={() => setManualOpen(false)}>Cancel</button>
+                  <button type="submit" className="cta primary" disabled={isLoading}>
+                    {isLoading ? 'Analyzing...' : 'Get Recommendation'}
+                  </button>
+                </div>
+              </form>
             </div>
-            <div className="row">
-              <label>Temperature (°C)</label>
-              <input required type="number" step="0.1" value={manual.temperature} onChange={e => setManual({ ...manual, temperature: e.target.value })} />
-            </div>
-            <div className="row">
-              <label>Humidity (%)</label>
-              <input required type="number" step="0.1" value={manual.humidity} onChange={e => setManual({ ...manual, humidity: e.target.value })} />
-            </div>
-            <div className="row">
-              <label>pH</label>
-              <input required type="number" step="0.1" value={manual.ph} onChange={e => setManual({ ...manual, ph: e.target.value })} />
-            </div>
-            <div className="row">
-              <label>Rainfall (mm/month)</label>
-              <input required type="number" step="0.1" value={manual.rainfall} onChange={e => setManual({ ...manual, rainfall: e.target.value })} />
-            </div>
-            <div className="row">
-              <label>State (optional)</label>
-              <input type="text" value={manual.state} onChange={e => setManual({ ...manual, state: e.target.value })} />
-            </div>
-            <div className="actions">
-              <button type="button" className="cta" onClick={() => setManualOpen(false)}>Cancel</button>
-              <button type="submit" className="cta primary" disabled={isLoading}>Get Recommendation</button>
-            </div>
-          </form>
+          </div>
         )}
       </main>
 
@@ -846,11 +869,6 @@ const Home = () => {
         recommendation={recommendation} 
         onClose={handleCloseRecommendation} 
       />
-      {yieldPredictionOpen && (
-        <YieldPrediction 
-          onClose={() => setYieldPredictionOpen(false)} 
-        />
-      )}
       {diseaseDetectionOpen && (
         <div className="modal-overlay" onClick={() => setDiseaseDetectionOpen(false)}>
           <div className="modal-content disease-detection-modal" onClick={(e) => e.stopPropagation()}>
@@ -864,6 +882,26 @@ const Home = () => {
             <DiseaseDetection />
           </div>
         </div>
+      )}
+
+      {/* Floating Chatbot Button */}
+      {!chatbotOpen && (
+        <button
+          className="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-110 z-50"
+          onClick={() => setChatbotOpen(true)}
+          title="Ask AI Assistant"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </button>
+      )}
+
+      {/* Chatbot */}
+      {chatbotOpen && (
+        <Chatbot 
+          onClose={() => setChatbotOpen(false)}
+          isMinimized={chatbotMinimized}
+          onMinimize={() => setChatbotMinimized(!chatbotMinimized)}
+        />
       )}
     </div>
   );
