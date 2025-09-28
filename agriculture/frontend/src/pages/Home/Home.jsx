@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import './Home.css';
 import { useUser, SignOutButton } from '@clerk/clerk-react';
 import CropRecommendation from '../../components/CropRecommendation/CropRecommendation';
+import YieldPrediction from '../../components/YieldPrediction/YieldPrediction';
+import DiseaseDetection from '../../components/DiseaseDetection/DiseaseDetection';
 import LoadingModal from '../../components/LoadingModal/LoadingModal';
 import ErrorModal from '../../components/ErrorModal/ErrorModal';
 
@@ -12,6 +14,10 @@ const Home = () => {
   const [recommendation, setRecommendation] = useState(null);
   const [error, setError] = useState(null);
   const [showError, setShowError] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [yieldPredictionOpen, setYieldPredictionOpen] = useState(false);
+  const [diseaseDetectionOpen, setDiseaseDetectionOpen] = useState(false);
+  const [manual, setManual] = useState({ N: '', temperature: '', humidity: '', ph: '', rainfall: '', state: '' });
 
   // Backend API URL from Vite env or fallback to localhost
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -77,6 +83,41 @@ const Home = () => {
       }
       
       setError(errorMessage);
+      setShowError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitManual = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setShowError(false);
+    try {
+      const payload = {
+        N: parseFloat(manual.N),
+        temperature: parseFloat(manual.temperature),
+        humidity: parseFloat(manual.humidity),
+        ph: parseFloat(manual.ph),
+        rainfall: parseFloat(manual.rainfall),
+        state: manual.state || null
+      };
+      const resp = await fetch(`${API_BASE_URL}/recommend-manual`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({}));
+        throw new Error(errData.detail || `Server error: ${resp.status}`);
+      }
+      const data = await resp.json();
+      setRecommendation(data);
+      setManualOpen(false);
+    } catch (err) {
+      console.error('Manual submit failed:', err);
+      setError(err.message || 'Failed to get recommendation');
       setShowError(true);
     } finally {
       setIsLoading(false);
@@ -155,7 +196,64 @@ const Home = () => {
           >
             {isLoading ? 'Analyzing...' : 'Analyse My Farm'}
           </button>
+          <button 
+            className="cta"
+            onClick={() => setManualOpen(true)}
+            disabled={isLoading}
+            style={{ marginLeft: '12px' }}
+          >
+            Enter Data Manually
+          </button>
+          <button 
+            className="cta"
+            onClick={() => setYieldPredictionOpen(true)}
+            disabled={isLoading}
+            style={{ marginLeft: '12px' }}
+          >
+            Predict Yield
+          </button>
+          <button 
+            className="cta"
+            onClick={() => setDiseaseDetectionOpen(true)}
+            disabled={isLoading}
+            style={{ marginLeft: '12px' }}
+          >
+            Detect Disease
+          </button>
         </div>
+
+        {manualOpen && (
+          <form className="manual-form" onSubmit={submitManual}>
+            <div className="row">
+              <label>N (kg/ha)</label>
+              <input required type="number" step="0.1" value={manual.N} onChange={e => setManual({ ...manual, N: e.target.value })} />
+            </div>
+            <div className="row">
+              <label>Temperature (°C)</label>
+              <input required type="number" step="0.1" value={manual.temperature} onChange={e => setManual({ ...manual, temperature: e.target.value })} />
+            </div>
+            <div className="row">
+              <label>Humidity (%)</label>
+              <input required type="number" step="0.1" value={manual.humidity} onChange={e => setManual({ ...manual, humidity: e.target.value })} />
+            </div>
+            <div className="row">
+              <label>pH</label>
+              <input required type="number" step="0.1" value={manual.ph} onChange={e => setManual({ ...manual, ph: e.target.value })} />
+            </div>
+            <div className="row">
+              <label>Rainfall (mm/month)</label>
+              <input required type="number" step="0.1" value={manual.rainfall} onChange={e => setManual({ ...manual, rainfall: e.target.value })} />
+            </div>
+            <div className="row">
+              <label>State (optional)</label>
+              <input type="text" value={manual.state} onChange={e => setManual({ ...manual, state: e.target.value })} />
+            </div>
+            <div className="actions">
+              <button type="button" className="cta" onClick={() => setManualOpen(false)}>Cancel</button>
+              <button type="submit" className="cta primary" disabled={isLoading}>Get Recommendation</button>
+            </div>
+          </form>
+        )}
       </main>
 
       {/* Modals */}
@@ -170,6 +268,25 @@ const Home = () => {
         recommendation={recommendation} 
         onClose={handleCloseRecommendation} 
       />
+      {yieldPredictionOpen && (
+        <YieldPrediction 
+          onClose={() => setYieldPredictionOpen(false)} 
+        />
+      )}
+      {diseaseDetectionOpen && (
+        <div className="modal-overlay" onClick={() => setDiseaseDetectionOpen(false)}>
+          <div className="modal-content disease-detection-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="modal-close" 
+              onClick={() => setDiseaseDetectionOpen(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <DiseaseDetection />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

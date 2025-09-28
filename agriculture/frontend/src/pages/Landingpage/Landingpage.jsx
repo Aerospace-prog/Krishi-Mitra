@@ -23,6 +23,7 @@ const Landingpage = () => {
       <video
         autoPlay
         loop
+        muted
         className="bg-video"
         src="/Videos/landing-page-vedio.mp4"
         type="video/mp4"
